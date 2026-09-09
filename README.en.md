@@ -15,6 +15,7 @@
   <a href="README.md">中文</a> ·
   <a href="docs/ARCHITECTURE.md">Architecture</a> ·
   <a href="docs/BUILD.md">Build</a> ·
+  <a href="SETUP_GUIDE_MY.md">မြန်မာလမ်းညွှန်</a> ·
   <a href="NOTICE.md">Notice</a>
 </p>
 
