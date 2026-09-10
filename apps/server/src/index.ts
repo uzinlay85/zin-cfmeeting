@@ -234,6 +234,80 @@ app.post('/api/meetings/:ref/join', async (c) => {
   });
 });
 
+/** Start recording for a meeting */
+app.post('/api/meetings/:ref/recording/start', async (c) => {
+  const env = c.env;
+  const ref = c.req.param('ref');
+  const rtk = createApi(env);
+  const meeting = await resolveMeeting(env, rtk, ref);
+  if (!meeting) return jsonError(c, 404, 'not_found', 'Meeting not found');
+
+  const accountId = (env.CF_ACCOUNT_ID || '').trim();
+  const apiToken = (env.CF_API_TOKEN || '').trim();
+  const appId = (env.RTK_APP_ID || '').trim();
+
+  if (!accountId || !apiToken || !appId) {
+    return jsonError(c, 500, 'not_configured', 'RealtimeKit credentials are not configured');
+  }
+
+  const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/realtime/kit/${encodeURIComponent(appId)}/recordings`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ meeting_id: meeting.id }),
+  });
+
+  const data = (await res.json().catch(() => ({}))) as { success?: boolean; data?: unknown; errors?: Array<{ message?: string }> };
+  if (!data.success) {
+    const msg = data.errors?.[0]?.message || 'Failed to start recording';
+    return jsonError(c, 400, 'recording_failed', msg);
+  }
+
+  return c.json({ ok: true, recording: data.data });
+});
+
+/** Stop active recording for a meeting */
+app.post('/api/meetings/:ref/recording/stop', async (c) => {
+  const env = c.env;
+  const ref = c.req.param('ref');
+  const rtk = createApi(env);
+  const meeting = await resolveMeeting(env, rtk, ref);
+  if (!meeting) return jsonError(c, 404, 'not_found', 'Meeting not found');
+
+  const accountId = (env.CF_ACCOUNT_ID || '').trim();
+  const apiToken = (env.CF_API_TOKEN || '').trim();
+  const appId = (env.RTK_APP_ID || '').trim();
+
+  if (!accountId || !apiToken || !appId) {
+    return jsonError(c, 500, 'not_configured', 'RealtimeKit credentials are not configured');
+  }
+
+  const listRes = await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/realtime/kit/${encodeURIComponent(appId)}/recordings?meeting_id=${encodeURIComponent(meeting.id)}`, {
+    headers: { Authorization: `Bearer ${apiToken}` },
+  });
+
+  const listData = (await listRes.json().catch(() => ({}))) as { data?: Array<{ id: string; status: string }> };
+  const active = listData.data?.find((r) => r.status === 'INVOKED' || r.status === 'RECORDING' || r.status === 'STARTING');
+
+  if (!active) {
+    return c.json({ ok: true, message: 'No active recording found' });
+  }
+
+  const stopRes = await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/realtime/kit/${encodeURIComponent(appId)}/recordings/${encodeURIComponent(active.id)}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${apiToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action: 'stop' }),
+  });
+
+  const stopData = await stopRes.json().catch(() => ({}));
+  return c.json({ ok: true, result: stopData });
+});
+
 app.all('/api/*', (c) => jsonError(c, 404, 'no_route', 'Unknown API route'));
 
 // Anything else is a static asset (only reached when run_worker_first matches or assets are missing).
