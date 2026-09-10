@@ -50,10 +50,10 @@ function presetFor(env: Env, type: MeetingType, role: 'host' | 'participant'): s
   if (isDemoProxy(env)) return DEMO_PRESETS[type][role];
   if (type === 'webinar') {
     return role === 'host'
-      ? env.RTK_WEBINAR_HOST_PRESET || (env.RTK_HOST_PRESET?.startsWith('cfmeeting_') ? env.RTK_HOST_PRESET.replace(/^cfmeeting_/, 'cfmeeting_webinar_') : 'webinar_presenter')
-      : env.RTK_WEBINAR_PARTICIPANT_PRESET || (env.RTK_PARTICIPANT_PRESET?.startsWith('cfmeeting_') ? env.RTK_PARTICIPANT_PRESET.replace(/^cfmeeting_/, 'cfmeeting_webinar_') : 'webinar_viewer');
+      ? env.RTK_WEBINAR_HOST_PRESET || (env.RTK_HOST_PRESET?.startsWith('cfmeeting_') ? env.RTK_HOST_PRESET.replace(/^cfmeeting_/, 'cfmeeting_webinar_') : 'cfmeeting_webinar_host')
+      : env.RTK_WEBINAR_PARTICIPANT_PRESET || (env.RTK_PARTICIPANT_PRESET?.startsWith('cfmeeting_') ? env.RTK_PARTICIPANT_PRESET.replace(/^cfmeeting_/, 'cfmeeting_webinar_') : 'cfmeeting_webinar_participant');
   }
-  return role === 'host' ? env.RTK_HOST_PRESET || 'group_call_host' : env.RTK_PARTICIPANT_PRESET || 'group_call_participant';
+  return role === 'host' ? env.RTK_HOST_PRESET || 'cfmeeting_host' : env.RTK_PARTICIPANT_PRESET || 'cfmeeting_participant';
 }
 
 function participantId(name: string): string {
