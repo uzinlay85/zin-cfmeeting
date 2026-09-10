@@ -16,6 +16,8 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
   const { meeting } = useRealtimeKitMeeting();
   const rootRef = useRef<HTMLDivElement>(null);
   const isMobile = useMedia('(max-width: 600px)');
+  const isPortrait = useMedia('(orientation: portrait)');
+  const gridAspectRatio = isMobile && isPortrait ? '3:4' : '16:9';
 
   const audioEnabled = useRealtimeKitSelector((m) => m.self.audioEnabled);
   const videoEnabled = useRealtimeKitSelector((m) => m.self.videoEnabled);
@@ -120,7 +122,7 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
     <div className="room" ref={rootRef}>
       <div className="room-stage">
         <RtkStage>
-          <RtkGrid />
+          <RtkGrid aspectRatio={gridAspectRatio} />
           <RtkNotifications />
           {sidebarOpen ? <RtkSidebar view={isMobile ? 'full-screen' : 'sidebar'} /> : null}
         </RtkStage>
