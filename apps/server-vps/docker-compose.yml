@@ -4,17 +4,11 @@ services:
       context: ../..
       dockerfile: apps/server-vps/Dockerfile
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    env_file:
+      - .env
     environment:
       - PORT=3000
       - NODE_ENV=production
-      - RTK_APP_ID=${RTK_APP_ID}
-      - RTK_API_KEY=${RTK_API_KEY}
-      - RTK_HOST_SECRET=${RTK_HOST_SECRET}
-      - ACCESS_CODE=${ACCESS_CODE}
-      - AUTO_DOWNLOAD_RECORDINGS=${AUTO_DOWNLOAD_RECORDINGS:-true}
-      - SYNC_INTERVAL_SEC=${SYNC_INTERVAL_SEC:-30}
       - RECORDINGS_DIR=/app/recordings
       - STATIC_DIR=/app/static
     volumes:
