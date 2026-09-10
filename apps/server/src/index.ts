@@ -79,12 +79,15 @@ async function resolveMeeting(env: Env, rtk: MeetingApi, refInput: string) {
       const stored = (await lookupByCode(env.MEETINGS, code)) as { type?: MeetingType } | null;
       type = stored?.type;
     }
+    if (!type && rtk.getMeetingType) {
+      type = await rtk.getMeetingType(live.id);
+    }
     return { id: live.id, code: code ?? undefined, title: live.title || '', status: live.status, type };
   }
   return null;
 }
 
-function publicMeeting(m: { id: string; code?: string; title: string; type?: MeetingType }) {
+function publicMeeting(m: { id: string; code?: string; title: string; type?: MeetingType | null }) {
   const ref = m.code ?? m.id;
   return {
     id: m.id,
@@ -92,7 +95,7 @@ function publicMeeting(m: { id: string; code?: string; title: string; type?: Mee
     ref,
     displayCode: m.code ? formatCode(m.code) : m.id,
     title: m.title,
-    type: m.type ?? 'conference',
+    type: m.type ?? null,
   };
 }
 

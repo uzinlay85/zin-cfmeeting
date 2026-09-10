@@ -65,7 +65,7 @@ export function MeetingPage() {
     [t],
   );
 
-  const effectiveType: MeetingType = info?.type ?? recent?.type ?? typeHint;
+  const effectiveType: MeetingType = info?.type === 'webinar' || typeHint === 'webinar' ? 'webinar' : (info?.type ?? recent?.type ?? typeHint);
   const joinAsHost = wantHost || (recent?.role === 'host' && recent.source === 'demo');
   const title = info?.title || recent?.title || '';
   const displayCode = info?.displayCode || recent?.displayCode || ref;

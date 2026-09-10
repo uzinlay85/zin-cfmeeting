@@ -57,6 +57,7 @@ export interface MeetingApi {
   createMeeting(input: { title: string; record_on_start?: boolean; persist_chat?: boolean; session_keep_alive_time_in_secs?: number }): Promise<RtkMeeting>;
   getMeeting(meetingId: string): Promise<RtkMeeting | null>;
   addParticipant(meetingId: string, input: { name: string; preset_name: string; custom_participant_id: string; picture?: string }): Promise<RtkParticipant>;
+  getMeetingType?(meetingId: string): Promise<'webinar' | 'conference' | undefined>;
 }
 
 export class RtkApi implements MeetingApi {
@@ -165,5 +166,21 @@ export class RtkApi implements MeetingApi {
 
   listPresets(): Promise<RtkPreset[]> {
     return this.request<RtkPreset[]>('GET', '/presets');
+  }
+
+  async getMeetingType(meetingId: string): Promise<'webinar' | 'conference' | undefined> {
+    try {
+      const participants = await this.request<Array<{ preset_name?: string } | { preset?: { name?: string } }>>('GET', `/meetings/${encodeURIComponent(meetingId)}/participants`);
+      if (Array.isArray(participants)) {
+        const isWebinar = participants.some((p) => {
+          const name = (p as { preset_name?: string }).preset_name || (p as { preset?: { name?: string } }).preset?.name;
+          return typeof name === 'string' && name.toLowerCase().includes('webinar');
+        });
+        if (isWebinar) return 'webinar';
+      }
+      return 'conference';
+    } catch {
+      return undefined;
+    }
   }
 }

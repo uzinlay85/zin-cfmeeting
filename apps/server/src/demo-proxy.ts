@@ -56,4 +56,8 @@ export class DemoProxyApi implements MeetingApi {
       meetingId,
     });
   }
+
+  async getMeetingType(): Promise<'webinar' | 'conference' | undefined> {
+    return undefined;
+  }
 }
