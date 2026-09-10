@@ -38,4 +38,14 @@
 
 ---
 
+### ၄။ [VPS Version တပ်ဆင်အသုံးပြုနည်း လမ်းညွှန် (VPS_SETUP_GUIDE.md)](VPS_SETUP_GUIDE.md)
+* VPS Hybrid Architecture (Node.js/Docker + Cloudflare RealtimeKit + VPS Local Recording Storage)
+* VPS Hardware လိုအပ်ချက်များ
+* Docker & Docker Compose (Caddy Auto-SSL) ဖြင့် တစ်ဆင့်ချင်း တပ်ဆင်နည်း
+* Node.js & PM2 ဖြင့် တပ်ဆင်နည်း
+* Recording ဖိုင်များကို VPS Hard Disk ပေါ်တွင် သိမ်းဆည်းခြင်းနှင့် Stream/Download API များ
+* Domain နှင့် SSL ချိတ်ဆက်ပုံ
+
+---
+
 [⬅️ မူရင်းပင်မ စာမျက်နှာ (Main README) သို့ ပြန်သွားရန်](../../README.md)

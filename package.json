@@ -10,14 +10,18 @@
   "workspaces": [
     "apps/web",
     "apps/server",
+    "apps/server-vps",
     "apps/desktop",
     "apps/android"
   ],
   "scripts": {
     "dev": "npm run dev -w apps/web",
     "dev:server": "npm run dev -w apps/server",
+    "dev:vps": "npm run dev -w apps/server-vps",
     "build": "npm run build -w apps/web",
     "build:packaged": "npm run build:packaged -w apps/web",
+    "build:vps": "npm run build -w apps/web && npm run build -w apps/server-vps",
+    "start:vps": "npm run start -w apps/server-vps",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "deploy": "npm run build -w apps/web && npm run deploy -w apps/server",
     "setup:presets": "npm run setup:presets -w apps/server",

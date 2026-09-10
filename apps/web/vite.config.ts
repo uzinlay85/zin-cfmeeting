@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
   if (packaged) alias['virtual:pwa-register'] = fileURLToPath(new URL('./src/lib/noop-sw.ts', import.meta.url));
   return {
     base: packaged ? './' : webBase,
-    resolve: { alias },
+    resolve: { alias, preserveSymlinks: true },
     define: {
       __APP_VERSION__: JSON.stringify(rootPkg.version),
       __PACKAGED__: JSON.stringify(packaged),

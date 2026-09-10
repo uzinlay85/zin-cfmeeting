@@ -1,0 +1,46 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/server-vps/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - RTK_APP_ID=${RTK_APP_ID}
+      - RTK_API_KEY=${RTK_API_KEY}
+      - RTK_HOST_SECRET=${RTK_HOST_SECRET}
+      - ACCESS_CODE=${ACCESS_CODE}
+      - AUTO_DOWNLOAD_RECORDINGS=${AUTO_DOWNLOAD_RECORDINGS:-true}
+      - SYNC_INTERVAL_SEC=${SYNC_INTERVAL_SEC:-30}
+      - RECORDINGS_DIR=/app/recordings
+      - STATIC_DIR=/app/static
+    volumes:
+      - ./recordings:/app/recordings
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:
