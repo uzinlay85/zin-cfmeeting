@@ -65,19 +65,24 @@ export class RtkApi implements MeetingApi {
   readonly mode: 'cloudflare' | 'legacy';
 
   constructor(env: Env) {
-    if (env.CF_ACCOUNT_ID && env.CF_API_TOKEN && env.RTK_APP_ID) {
+    const accountId = (env.CF_ACCOUNT_ID || '').trim();
+    const apiToken = (env.CF_API_TOKEN || '').trim();
+    const appId = (env.RTK_APP_ID || '').trim();
+    if (accountId && apiToken && appId) {
       this.mode = 'cloudflare';
-      this.base = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CF_ACCOUNT_ID)}/realtime/kit/${encodeURIComponent(env.RTK_APP_ID)}`;
+      this.base = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/realtime/kit/${encodeURIComponent(appId)}`;
       this.headers = {
-        Authorization: `Bearer ${env.CF_API_TOKEN}`,
+        Authorization: `Bearer ${apiToken}`,
         'Content-Type': 'application/json',
       };
     } else if (env.REALTIMEKIT_ORG_ID && env.REALTIMEKIT_API_KEY) {
       this.mode = 'legacy';
-      const host = env.REALTIMEKIT_BASE_URL || 'realtime.cloudflare.com';
+      const host = (env.REALTIMEKIT_BASE_URL || 'realtime.cloudflare.com').trim();
+      const orgId = env.REALTIMEKIT_ORG_ID.trim();
+      const apiKey = env.REALTIMEKIT_API_KEY.trim();
       this.base = `https://api.${host}/v2`;
       this.headers = {
-        Authorization: `Basic ${btoa(`${env.REALTIMEKIT_ORG_ID}:${env.REALTIMEKIT_API_KEY}`)}`,
+        Authorization: `Basic ${btoa(`${orgId}:${apiKey}`)}`,
         'Content-Type': 'application/json',
       };
     } else {
@@ -91,8 +96,8 @@ export class RtkApi implements MeetingApi {
 
   static isConfigured(env: Env): boolean {
     return Boolean(
-      (env.CF_ACCOUNT_ID && env.CF_API_TOKEN && env.RTK_APP_ID) ||
-        (env.REALTIMEKIT_ORG_ID && env.REALTIMEKIT_API_KEY),
+      (env.CF_ACCOUNT_ID?.trim() && env.CF_API_TOKEN?.trim() && env.RTK_APP_ID?.trim()) ||
+        (env.REALTIMEKIT_ORG_ID?.trim() && env.REALTIMEKIT_API_KEY?.trim()),
     );
   }
 
