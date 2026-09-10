@@ -271,26 +271,57 @@ app.post('/api/meetings/:ref/recording/stop', async (c) => {
   return c.json({ ok: true, result: stopData });
 });
 
-/* ---------- VPS Local Recordings Management ---------- */
+/* ---------- VPS Local Recordings Management & Security ---------- */
+
+function getCookie(header: string | undefined, name: string): string | undefined {
+  if (!header) return undefined;
+  const match = header.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[2]) : undefined;
+}
+
+function checkRecordingAuth(c: { req: { query: (k: string) => string | undefined; header: (k: string) => string | undefined } }): boolean {
+  const code = env.CREATE_ACCESS_CODE;
+  if (!code) return true; // If no password is configured, allow
+  const cookieCode = getCookie(c.req.header('cookie'), 'vps_access_code');
+  const token =
+    c.req.query('key') ||
+    c.req.query('access_code') ||
+    cookieCode ||
+    c.req.header('x-access-code') ||
+    c.req.header('authorization')?.replace(/^Bearer\s+/i, '');
+  return token === code;
+}
 
 /** List all recordings downloaded on the VPS disk */
 app.get('/api/vps/recordings', (c) => {
+  if (!checkRecordingAuth(c)) {
+    return jsonError(c, 401, 'unauthorized', 'Access code required to view recordings. Use ?key=YOUR_ACCESS_CODE or log in.');
+  }
+
+  const keyParam = env.CREATE_ACCESS_CODE ? `?key=${encodeURIComponent(env.CREATE_ACCESS_CODE)}` : '';
   const list = recordingManager.listLocal().map((r: LocalRecording) => ({
     ...r,
-    streamUrl: `/api/vps/recordings/${encodeURIComponent(r.filename)}`,
-    downloadUrl: `/api/vps/recordings/${encodeURIComponent(r.filename)}?download=1`,
+    streamUrl: `/api/vps/recordings/${encodeURIComponent(r.filename)}${keyParam}`,
+    downloadUrl: `/api/vps/recordings/${encodeURIComponent(r.filename)}${keyParam ? `${keyParam}&download=1` : '?download=1'}`,
   }));
   return c.json({ ok: true, recordings: list, directory: env.RECORDINGS_DIR });
 });
 
 /** Trigger immediate manual sync from Cloudflare R2 to VPS disk */
 app.post('/api/vps/recordings/sync', async (c) => {
+  if (!checkRecordingAuth(c)) {
+    return jsonError(c, 401, 'unauthorized', 'Access code required');
+  }
   const result = await recordingManager.syncFromCloudflare();
   return c.json({ ok: true, result });
 });
 
 /** Stream or download a recording MP4 file from VPS disk */
 app.get('/api/vps/recordings/:filename', (c) => {
+  if (!checkRecordingAuth(c)) {
+    return jsonError(c, 401, 'unauthorized', 'Access code required');
+  }
+
   const filename = c.req.param('filename');
   const filePath = recordingManager.getFilePath(filename);
   if (!filePath) return jsonError(c, 404, 'not_found', 'Recording file not found on VPS');
@@ -332,6 +363,206 @@ app.get('/api/vps/recordings/:filename', (c) => {
     status: 200,
     headers,
   });
+});
+
+/** Password-Protected Web UI for Recordings Dashboard */
+app.get('/recordings', (c) => {
+  const html = `<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CFMeeting Recordings Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --border: #334155;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 24px 16px; min-height: 100vh; }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 8px; }
+    .btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; transition: background 0.2s; }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #334155; }
+    .btn-secondary:hover { background: #475569; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .rec-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
+    .rec-item:last-child { border-bottom: none; }
+    .rec-info { flex: 1; min-width: 240px; }
+    .rec-title { font-weight: 600; font-size: 1rem; margin-bottom: 4px; color: #e2e8f0; word-break: break-all; }
+    .rec-meta { font-size: 0.85rem; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
+    .rec-actions { display: flex; gap: 8px; }
+    .login-box { max-width: 400px; margin: 80px auto; text-align: center; }
+    .input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: white; margin-bottom: 16px; font-size: 1rem; }
+    .input:focus { outline: 2px solid var(--primary); }
+    #videoModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+    #videoModal video { max-width: 900px; width: 100%; max-height: 80vh; border-radius: 8px; background: black; }
+    .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 2rem; cursor: pointer; }
+    .badge { background: rgba(59, 130, 246, 0.15); color: #60a5fa; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎥 CFMeeting Recordings</h1>
+      <div id="headerActions" style="display:none;">
+        <button class="btn btn-secondary" onclick="syncRecordings()" id="syncBtn">🔄 Sync Cloudflare</button>
+        <button class="btn btn-secondary" onclick="logout()">🔒 Logout</button>
+      </div>
+    </header>
+
+    <div id="loginView" class="card login-box">
+      <h2 style="margin-bottom:8px;">🔒 Protected Storage</h2>
+      <p style="color:var(--muted); margin-bottom:20px; font-size:0.9rem;">Recording ဖိုင်များကို ကြည့်ရှုရန် Access Code ထည့်ပါ</p>
+      <input type="password" id="accessInput" class="input" placeholder="Enter Access Code..." />
+      <button class="btn" style="width:100%; justify-content:center;" onclick="login()">Unlock Dashboard</button>
+      <div id="loginErr" style="color:#ef4444; margin-top:12px; font-size:0.9rem; display:none;">Invalid access code</div>
+    </div>
+
+    <div id="mainView" style="display:none;">
+      <div class="card">
+        <div id="recList">Loading recordings...</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="videoModal" onclick="closeVideo(event)">
+    <span class="close-modal" onclick="closeVideo()">&times;</span>
+    <video id="player" controls autoplay></video>
+  </div>
+
+  <script>
+    function getStoredKey() {
+      return localStorage.getItem('vps_rec_key') || '';
+    }
+
+    async function checkAuth() {
+      const key = getStoredKey();
+      if (!key) {
+        document.getElementById('loginView').style.display = 'block';
+        document.getElementById('mainView').style.display = 'none';
+        document.getElementById('headerActions').style.display = 'none';
+        return;
+      }
+      document.cookie = 'vps_access_code=' + encodeURIComponent(key) + '; path=/; max-age=2592000; SameSite=Lax';
+      loadList(key);
+    }
+
+    async function login() {
+      const code = document.getElementById('accessInput').value.trim();
+      if (!code) return;
+      localStorage.setItem('vps_rec_key', code);
+      document.cookie = 'vps_access_code=' + encodeURIComponent(code) + '; path=/; max-age=2592000; SameSite=Lax';
+      await loadList(code);
+    }
+
+    function logout() {
+      localStorage.removeItem('vps_rec_key');
+      document.cookie = 'vps_access_code=; path=/; max-age=0';
+      location.reload();
+    }
+
+    async function loadList(key) {
+      try {
+        const res = await fetch('/api/vps/recordings?key=' + encodeURIComponent(key));
+        if (res.status === 401) {
+          document.getElementById('loginView').style.display = 'block';
+          document.getElementById('loginErr').style.display = 'block';
+          document.getElementById('mainView').style.display = 'none';
+          document.getElementById('headerActions').style.display = 'none';
+          return;
+        }
+        const data = await res.json();
+        document.getElementById('loginView').style.display = 'none';
+        document.getElementById('mainView').style.display = 'block';
+        document.getElementById('headerActions').style.display = 'flex';
+        renderList(data.recordings || [], key);
+      } catch (err) {
+        document.getElementById('recList').innerHTML = '<p style="color:#ef4444">Error loading recordings</p>';
+      }
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes) return '0 B';
+      const k = 1024;
+      const dm = 1;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    function renderList(list, key) {
+      const el = document.getElementById('recList');
+      if (list.length === 0) {
+        el.innerHTML = '<p style="text-align:center; color:var(--muted); padding:40px 0;">No recordings stored on VPS yet.</p>';
+        return;
+      }
+      el.innerHTML = list.map(r => {
+        const date = new Date(r.createdAt).toLocaleString();
+        const size = formatBytes(r.sizeBytes);
+        return \`
+          <div class="rec-item">
+            <div class="rec-info">
+              <div class="rec-title">\${r.filename}</div>
+              <div class="rec-meta">
+                <span>📅 \${date}</span>
+                <span>📦 \${size}</span>
+                <span class="badge">Meeting: \${r.meetingId}</span>
+              </div>
+            </div>
+            <div class="rec-actions">
+              <button class="btn" onclick="playVideo('\${r.streamUrl}')">▶ Play</button>
+              <a class="btn btn-secondary" href="\${r.downloadUrl}" download>⬇ Download</a>
+            </div>
+          </div>
+        \`;
+      }).join('');
+    }
+
+    function playVideo(url) {
+      const modal = document.getElementById('videoModal');
+      const player = document.getElementById('player');
+      player.src = url;
+      modal.style.display = 'flex';
+      player.play();
+    }
+
+    function closeVideo(e) {
+      if (e && e.target.id !== 'videoModal' && !e.target.classList.contains('close-modal')) return;
+      const modal = document.getElementById('videoModal');
+      const player = document.getElementById('player');
+      player.pause();
+      player.src = '';
+      modal.style.display = 'none';
+    }
+
+    async function syncRecordings() {
+      const btn = document.getElementById('syncBtn');
+      btn.innerText = '⏳ Syncing...';
+      btn.disabled = true;
+      try {
+        const key = getStoredKey();
+        await fetch('/api/vps/recordings/sync?key=' + encodeURIComponent(key), { method: 'POST' });
+        await loadList(key);
+      } finally {
+        btn.innerText = '🔄 Sync Cloudflare';
+        btn.disabled = false;
+      }
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>`;
+  return c.html(html);
 });
 
 /* ---------- Static Web Asset Serving (SPA) ---------- */
