@@ -35,13 +35,18 @@ export interface RtkPreset {
 export interface RtkRecordingItem {
   id: string;
   meeting_id: string;
-  status: 'INVOKED' | 'STARTING' | 'RECORDING' | 'COMPLETED' | 'STOPPED' | 'FAILED' | string;
+  status: 'INVOKED' | 'STARTING' | 'RECORDING' | 'COMPLETED' | 'STOPPED' | 'UPLOADED' | 'FAILED' | string;
   download_url?: string;
   file_path?: string;
   duration?: number;
+  recording_duration?: number;
+  file_size?: number;
   created_at?: string;
   started_at?: string;
   stopped_at?: string;
+  invoked_time?: string;
+  started_time?: string;
+  stopped_time?: string;
 }
 
 interface Envelope<T> {

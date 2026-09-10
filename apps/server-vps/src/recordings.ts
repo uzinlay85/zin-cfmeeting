@@ -91,13 +91,13 @@ export class RecordingManager {
       const items = await rtk.listRecordings();
 
       for (const item of items) {
-        if (!item.download_url && !item.file_path) continue;
-        if (item.status !== 'COMPLETED' && item.status !== 'STOPPED') continue;
-
         const downloadUrl = item.download_url;
         if (!downloadUrl) continue;
+        if (item.status === 'INVOKED' || item.status === 'STARTING' || item.status === 'RECORDING' || item.status === 'FAILED') {
+          continue;
+        }
 
-        const datePrefix = (item.created_at || new Date().toISOString()).slice(0, 10);
+        const datePrefix = (item.invoked_time || item.started_time || item.created_at || new Date().toISOString()).slice(0, 10);
         const filename = `${datePrefix}_${item.meeting_id}_${item.id}.mp4`;
         const targetPath = path.join(this.dir, filename);
         const metaPath = path.join(this.dir, `${datePrefix}_${item.meeting_id}_${item.id}.json`);
