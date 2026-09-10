@@ -91,7 +91,7 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
         setRecActive(isRec);
         throw new Error(data?.error?.message || `Failed to ${action} recording`);
       }
-      toast(isRec ? t('ctrl.stopRecord') : t('ctrl.record'), 'info');
+      toast(isRec ? 'Recording stopped' : 'Recording started', 'info');
     } catch (err) {
       fail(err);
     }
@@ -168,45 +168,45 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
 
       {more ? (
         <>
-          <div className="sheet-overlay" style={{ background: 'transparent', backdropFilter: 'none' }} onMouseDown={() => setMore(false)} />
-          <div className="more-menu" role="menu">
+          <div className="more-backdrop" onClick={() => setMore(false)} />
+          <div className="more-menu" role="menu" onClick={(e) => e.stopPropagation()}>
             {isMobile ? (
-              <button className="more-item" onClick={() => { setMore(false); toggleSidebar('participants'); }}>
+              <button type="button" className="more-item" onClick={() => { setMore(false); toggleSidebar('participants'); }}>
                 <Icon name="users" size={18} /> {t('ctrl.participants')}
               </button>
             ) : null}
             {isMobile && canShare ? (
-              <button className="more-item" onClick={() => { setMore(false); toggleShare(); }}>
+              <button type="button" className="more-item" onClick={() => { setMore(false); toggleShare(); }}>
                 <Icon name="monitor" size={18} /> {screenShareEnabled ? t('ctrl.stopShare') : t('ctrl.share')}
               </button>
             ) : null}
-            <button className="more-item" onClick={() => { setMore(false); emit({ activeSettings: true }); }}>
+            <button type="button" className="more-item" onClick={() => { setMore(false); emit({ activeSettings: true }); }}>
               <Icon name="settings" size={18} /> {t('ctrl.settings')}
             </button>
-            <button className="more-item" onClick={() => { setMore(false); toggleSidebar('polls'); }}>
+            <button type="button" className="more-item" onClick={() => { setMore(false); toggleSidebar('polls'); }}>
               <Icon name="bar-chart" size={18} /> {t('ctrl.polls')}
             </button>
-            <button className="more-item" onClick={() => { setMore(false); toggleSidebar('plugins'); }}>
+            <button type="button" className="more-item" onClick={() => { setMore(false); toggleSidebar('plugins'); }}>
               <Icon name="grid" size={18} /> {t('ctrl.plugins')}
             </button>
             {!isMobile ? (
-              <button className="more-item" onClick={() => { setMore(false); toggleFullscreen(); }}>
+              <button type="button" className="more-item" onClick={() => { setMore(false); toggleFullscreen(); }}>
                 <Icon name={fullscreen ? 'minimize' : 'maximize'} size={18} /> {fullscreen ? t('ctrl.exitFullscreen') : t('ctrl.fullscreen')}
               </button>
             ) : null}
             {canMuteAll || canRecord || canBreakout ? <div className="more-sep" /> : null}
             {canMuteAll ? (
-              <button className="more-item" onClick={() => { setMore(false); emit({ activeMuteAllConfirmation: true }); }}>
+              <button type="button" className="more-item" onClick={() => { setMore(false); emit({ activeMuteAllConfirmation: true }); }}>
                 <Icon name="mic-off" size={18} /> {t('ctrl.muteAll')}
               </button>
             ) : null}
             {canBreakout ? (
-              <button className="more-item" onClick={() => { setMore(false); emit({ activeBreakoutRoomsManager: { active: true, mode: 'create' } }); }}>
+              <button type="button" className="more-item" onClick={() => { setMore(false); emit({ activeBreakoutRoomsManager: { active: true, mode: 'create' } }); }}>
                 <Icon name="layers" size={18} /> {t('ctrl.breakout')}
               </button>
             ) : null}
             {canRecord ? (
-              <button className={`more-item ${isRecording ? 'danger' : ''}`} onClick={() => { setMore(false); void toggleRecording(); }}>
+              <button type="button" className={`more-item ${isRecording ? 'danger' : ''}`} onClick={() => { setMore(false); void toggleRecording(); }}>
                 <Icon name="record" size={18} /> {isRecording ? t('ctrl.stopRecord') : t('ctrl.record')}
               </button>
             ) : null}
