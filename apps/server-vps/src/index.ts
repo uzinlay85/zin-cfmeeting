@@ -351,10 +351,27 @@ const MIME_TYPES: Record<string, string> = {
   '.woff2': 'font/woff2',
 };
 
+function findStaticDir(): string | null {
+  const candidates = [
+    env.STATIC_DIR,
+    '/app/public',
+    '/app/static',
+    path.resolve(process.cwd(), 'public'),
+    path.resolve(process.cwd(), 'apps/web/dist'),
+    path.resolve(process.cwd(), '../web/dist'),
+  ];
+  for (const candidate of candidates) {
+    if (candidate && fs.existsSync(candidate) && fs.existsSync(path.join(candidate, 'index.html'))) {
+      return path.resolve(candidate);
+    }
+  }
+  return null;
+}
+
 app.get('*', (c) => {
-  const staticDir = path.resolve(env.STATIC_DIR);
-  if (!fs.existsSync(staticDir)) {
-    return c.text('CFMeeting VPS Server is running. Static web assets not found at ' + staticDir, 200);
+  const staticDir = findStaticDir();
+  if (!staticDir) {
+    return c.text('CFMeeting VPS Server is running. Static web assets not found (tried ' + env.STATIC_DIR + ', /app/public, public, ../web/dist)', 200);
   }
 
   const reqPath = c.req.path === '/' ? '/index.html' : c.req.path;

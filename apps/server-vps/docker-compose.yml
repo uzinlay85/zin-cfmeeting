@@ -10,7 +10,7 @@ services:
       - PORT=3000
       - NODE_ENV=production
       - RECORDINGS_DIR=/app/recordings
-      - STATIC_DIR=/app/static
+      - STATIC_DIR=/app/public
     volumes:
       - ./recordings:/app/recordings
     healthcheck:
