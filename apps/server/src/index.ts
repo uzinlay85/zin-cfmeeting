@@ -137,7 +137,7 @@ app.get('/api/config', (c) => {
     version: VERSION,
     configured: isConfigured(env),
     demoProxy: isDemoProxy(env),
-    createAccessCodeRequired: Boolean(env.CREATE_ACCESS_CODE),
+    createAccessCodeRequired: Boolean((env.CREATE_ACCESS_CODE || '').trim()),
     shortCodes: Boolean(env.MEETINGS),
     allowRecording: env.ALLOW_RECORDING === 'true',
     meetingTypes: ['conference', 'webinar'] as MeetingType[],
@@ -149,7 +149,9 @@ app.post('/api/meetings', async (c) => {
   const env = c.env;
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
 
-  if (env.CREATE_ACCESS_CODE && body.accessCode !== env.CREATE_ACCESS_CODE) {
+  const expectedCode = (env.CREATE_ACCESS_CODE || '').trim();
+  const givenCode = typeof body.accessCode === 'string' ? body.accessCode.trim() : '';
+  if (expectedCode && givenCode !== expectedCode) {
     return jsonError(c, 403, 'access_code_required', 'A valid access code is required to create meetings');
   }
 
