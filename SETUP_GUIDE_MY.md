@@ -93,7 +93,39 @@ Deployed cfmeeting triggers (1.44 sec)
 
 ---
 
-## ၄။ အခြား အသုံးဝင်သော အမိန့်များ (Useful Commands)
+## ၄။ အစည်းအဝေး ဖန်တီးခွင့် လျှို့ဝှက်ကုဒ် သတ်မှတ်ခြင်း (Meeting Access Code Protection)
+
+Cloudflare RealtimeKit (WebRTC) သည် အသုံးပြုသည့် မိနစ် (Participant-minutes) အလိုက် အသုံးပြုခ/Quota ရှိပါသည်။ သင်၏ ဝဘ်ဆိုက်လိပ်စာကို အင်တာနက်ပေါ်မှ လူစိမ်းများ တွေ့ရှိသွားပြီး အစည်းအဝေးခန်းများ လှမ်းမဖွင့်နိုင်စေရန် **Access Code** ဖြင့် ကာကွယ်ထားနိုင်ပါသည်:
+
+### (က) အလုပ်လုပ်ပုံနှင့် ရည်ရွယ်ချက်
+* **Host သာ လိုအပ်ခြင်း**: အစည်းအဝေးကို စတင်ဖန်တီးမည့်သူ (Host) သာ Access Code ထည့်ရန် လိုအပ်ပါသည်။
+* **ဧည့်သည်များ မလိုပါ**: ဖိတ်ကြားခံရသော အခြားသူများ (Participants) အနေဖြင့် သင်ပို့ပေးသော Meeting Link ဖြင့် တိုက်ရိုက် Join နိုင်ပြီး Access Code မလိုပါ။
+
+### (ခ) Worker ပေါ်တွင် Access Code သတ်မှတ်နည်း
+PowerShell တွင် အောက်ပါ command ကို အသုံးပြု၍ မိမိထားလိုသော လျှို့ဝှက်ကုဒ် (Passcode) ကို Cloudflare Worker တွင် ထည့်သွင်းနိုင်ပါသည်:
+
+```powershell
+$env:CLOUDFLARE_API_TOKEN="သင်၏_API_Token"
+$env:CLOUDFLARE_ACCOUNT_ID="သင်၏_Account_ID"
+npx wrangler secret put CREATE_ACCESS_CODE --cwd apps/server
+```
+*(Wrangler က ကုဒ်တောင်းသည့်အခါ မိမိထားလိုသော လျှို့ဝှက်ကုဒ် ဥပမာ `your_secret_passcode` ဟု ရိုက်ထည့်ပါ)*
+
+### (ဂ) Local စမ်းသပ်မှုအတွက် ထည့်သွင်းခြင်း
+Local တွင် စမ်းသပ်လိုပါက Root ရှိ `.env` နှင့် `apps/server/.dev.vars` ဖိုင်တို့တွင် အောက်ပါအတိုင်း ထည့်သွင်းနိုင်ပါသည် (Gitignore ပြုလုပ်ထားပြီး ဖြစ်ပါသည်):
+
+```env
+CREATE_ACCESS_CODE=your_secret_passcode
+```
+
+### (ဃ) အသုံးပြုပုံ
+အစည်းအဝေး စတင်ဖွင့်လှစ်သည့်အခါ "Access code" အကွက်တွင် သတ်မှတ်ထားသော လျှို့ဝှက်ကုဒ်ကို ရိုက်ထည့်ပြီးမှသာ **"Start meeting"** ပြုလုပ်နိုင်မည် ဖြစ်ပါသည်။ မှားယွင်းစွာ ရိုက်ထည့်ပါက သို့မဟုတ် မထည့်ပါက *"Invalid access code"* ဟု အနီရောင်ဖြင့် ပြပြီး ခွင့်ပြုမည် မဟုတ်ပါ။
+
+> **မှတ်ချက်**: Browser ၏ Local Storage က အဆိုပါ ကုဒ်ကို အလိုအလျောက် မှတ်သားထားပေးသောကြောင့် မိမိ၏ Browser တွင် နောက်တစ်ကြိမ်များ၌ ထပ်မံရိုက်ထည့်ရန် မလိုတော့ပါ။
+
+---
+
+## ၅။ အခြား အသုံးဝင်သော အမိန့်များ (Useful Commands)
 
 | Command | အသုံးဝင်ပုံ |
 | :--- | :--- |
@@ -106,7 +138,7 @@ Deployed cfmeeting triggers (1.44 sec)
 
 ---
 
-## ၅။ ကြုံတွေ့ရတတ်သော ပြဿနာများနှင့် ဖြေရှင်းနည်းများ (Troubleshooting)
+## ၆။ ကြုံတွေ့ရတတ်သော ပြဿနာများနှင့် ဖြေရှင်းနည်းများ (Troubleshooting)
 
 ### ပြဿနာ ၁: `localhost:8976 connection refused`
 * **အကြောင်းရင်း**: `npx wrangler login` ပြုလုပ်ချိန်တွင် Browser က ပြန်ပို့သော Auth Callback ကို Local Port (8976) က လက်ခံမရခြင်း (VPN/Proxy ကြောင့် လမ်းကြောင်းလွဲခြင်း သို့မဟုတ် Firewall ကြောင့် ဖြစ်တတ်သည်)။
@@ -118,7 +150,7 @@ Deployed cfmeeting triggers (1.44 sec)
 
 ---
 
-## ၆။ အပြီးသတ် ရလဒ်
+## ၇။ အပြီးသတ် ရလဒ်
 
 * **Live Web App**: [https://cfmeeting.uzinlay85.workers.dev](https://cfmeeting.uzinlay85.workers.dev)
 * မည်သည့် ဖုန်း/ကွန်ပျူတာ Browser မှမဆို Link ကို ဖွင့်ပြီး ကင်မရာ/မိုက်ခရိုဖုန်း ခွင့်ပြုချက် ပေးကာ Meeting တန်းတက်နိုင်ပါသည်။
