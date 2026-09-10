@@ -19,7 +19,7 @@
     "APP_NAME": "CFMeeting",
     // "true" = relay create/join calls to the public Cloudflare demo API (no Cloudflare account needed,
     // same caveats as the app's default mode). "false" = use your own RealtimeKit credentials (.dev.vars / secrets).
-    "DEMO_PROXY": "true",
+    "DEMO_PROXY": "false",
     // Preset names used for the meeting creator (host) and for everyone else.
     // Run `npm run setup:presets` once to create these two presets in your RealtimeKit app,
     // or point these at presets you created in the Cloudflare dashboard.
@@ -29,7 +29,7 @@
     // builds call the API cross-origin, so "*" is the practical default for a demo).
     "ALLOWED_ORIGINS": "*",
     // Allow the "record on start" option in the UI. Recording is billed separately by Cloudflare.
-    "ALLOW_RECORDING": "false",
+    "ALLOW_RECORDING": "true",
     // Seconds a session stays alive after the last participant leaves.
     "SESSION_KEEP_ALIVE_SECS": "60"
   }
