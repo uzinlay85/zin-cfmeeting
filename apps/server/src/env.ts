@@ -19,6 +19,8 @@ export interface Env {
   APP_NAME?: string;
   RTK_HOST_PRESET?: string;
   RTK_PARTICIPANT_PRESET?: string;
+  RTK_WEBINAR_HOST_PRESET?: string;
+  RTK_WEBINAR_PARTICIPANT_PRESET?: string;
   ALLOWED_ORIGINS?: string;
   ALLOW_RECORDING?: string;
   SESSION_KEEP_ALIVE_SECS?: string;

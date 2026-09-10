@@ -48,12 +48,12 @@ function parseType(input: unknown): MeetingType {
 
 function presetFor(env: Env, type: MeetingType, role: 'host' | 'participant'): string {
   if (isDemoProxy(env)) return DEMO_PRESETS[type][role];
-  const base = role === 'host' ? env.RTK_HOST_PRESET || 'cfmeeting_host' : env.RTK_PARTICIPANT_PRESET || 'cfmeeting_participant';
   if (type === 'webinar') {
-    // cfmeeting_host -> cfmeeting_webinar_host (convention used by scripts/setup-presets.mjs)
-    return base.replace(/^cfmeeting_/, 'cfmeeting_webinar_');
+    return role === 'host'
+      ? env.RTK_WEBINAR_HOST_PRESET || (env.RTK_HOST_PRESET?.startsWith('cfmeeting_') ? env.RTK_HOST_PRESET.replace(/^cfmeeting_/, 'cfmeeting_webinar_') : 'webinar_presenter')
+      : env.RTK_WEBINAR_PARTICIPANT_PRESET || (env.RTK_PARTICIPANT_PRESET?.startsWith('cfmeeting_') ? env.RTK_PARTICIPANT_PRESET.replace(/^cfmeeting_/, 'cfmeeting_webinar_') : 'webinar_viewer');
   }
-  return base;
+  return role === 'host' ? env.RTK_HOST_PRESET || 'group_call_host' : env.RTK_PARTICIPANT_PRESET || 'group_call_participant';
 }
 
 function participantId(name: string): string {

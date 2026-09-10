@@ -125,7 +125,7 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
           {sidebarOpen ? <RtkSidebar view={isMobile ? 'full-screen' : 'sidebar'} /> : null}
         </RtkStage>
       </div>
-      <RtkParticipantsAudio meeting={meeting} />
+      <RtkParticipantsAudio />
 
       <div className="room-top">
         <span className="chip chip-title">

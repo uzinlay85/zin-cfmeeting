@@ -23,8 +23,8 @@
     // Preset names used for the meeting creator (host) and for everyone else.
     // Run `npm run setup:presets` once to create these two presets in your RealtimeKit app,
     // or point these at presets you created in the Cloudflare dashboard.
-    "RTK_HOST_PRESET": "cfmeeting_host",
-    "RTK_PARTICIPANT_PRESET": "cfmeeting_participant",
+    "RTK_HOST_PRESET": "group_call_host",
+    "RTK_PARTICIPANT_PRESET": "group_call_participant",
     // Comma-separated list of allowed browser origins for the API, or "*" (desktop/Android
     // builds call the API cross-origin, so "*" is the practical default for a demo).
     "ALLOWED_ORIGINS": "*",
