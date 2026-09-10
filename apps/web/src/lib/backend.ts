@@ -119,16 +119,21 @@ export function detectSameOriginApi(): Promise<boolean> {
     sameOriginApi = false;
     return Promise.resolve(false);
   }
+
+  // GitHub Pages is pure static (no API server)
+  const isGitHubPages = typeof window !== 'undefined' && window.location.hostname.endsWith('github.io');
+
   probe = (async () => {
     try {
       const ctrl = new AbortController();
-      const timer = window.setTimeout(() => ctrl.abort(), 2500);
+      const timer = window.setTimeout(() => ctrl.abort(), 8000);
       const res = await fetch(`${import.meta.env.BASE_URL}api/health`, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
       window.clearTimeout(timer);
       const data = (await res.json().catch(() => null)) as { ok?: boolean; configured?: boolean } | null;
       sameOriginApi = Boolean(res.ok && data?.ok && data?.configured);
     } catch {
-      sameOriginApi = false;
+      // If network timed out on a self-hosted domain (like duckdns or workers.dev), assume self-hosted
+      sameOriginApi = !isGitHubPages;
     }
     return sameOriginApi;
   })();
@@ -150,7 +155,8 @@ function forcedMode(): Mode | null {
 export function getMode(): Mode {
   const forced = forcedMode();
   if (forced) return forced;
-  if (getServerUrl() || sameOriginApi) return 'selfhosted';
+  const isGitHubPages = typeof window !== 'undefined' && window.location.hostname.endsWith('github.io');
+  if (getServerUrl() || (sameOriginApi !== false && !isGitHubPages)) return 'selfhosted';
   if (canCallDemoApiDirectly) return 'demo';
   return 'embed';
 }
