@@ -17,7 +17,7 @@
     "RTK_HOST_PRESET": "cfmeeting_host",
     "RTK_PARTICIPANT_PRESET": "cfmeeting_participant",
     "ALLOWED_ORIGINS": "*",
-    "ALLOW_RECORDING": "true",
+    "ALLOW_RECORDING": "false",
     "SESSION_KEEP_ALIVE_SECS": "60"
   }
 }
