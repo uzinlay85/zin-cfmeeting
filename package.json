@@ -10,6 +10,7 @@
   "workspaces": [
     "apps/web",
     "apps/server",
+    "apps/server-original",
     "apps/server-vps",
     "apps/desktop",
     "apps/android"
@@ -17,6 +18,7 @@
   "scripts": {
     "dev": "npm run dev -w apps/web",
     "dev:server": "npm run dev -w apps/server",
+    "dev:original": "npm run dev -w apps/server-original",
     "dev:vps": "npm run dev -w apps/server-vps",
     "build": "npm run build -w apps/web",
     "build:packaged": "npm run build:packaged -w apps/web",
@@ -24,7 +26,9 @@
     "start:vps": "npm run start -w apps/server-vps",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "deploy": "npm run build -w apps/web && npm run deploy -w apps/server",
+    "deploy:original": "npm run build -w apps/web && npm run deploy -w apps/server-original",
     "setup:presets": "npm run setup:presets -w apps/server",
+    "setup:presets:original": "npm run setup:presets -w apps/server-original",
     "desktop:dev": "npm run dev -w apps/desktop",
     "desktop:build": "npm run build:packaged -w apps/web && npm run dist -w apps/desktop",
     "android:sync": "npm run build:packaged -w apps/web && npm run sync -w apps/android",

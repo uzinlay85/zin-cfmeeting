@@ -11,7 +11,14 @@
 
 အောက်ပါ လမ်းညွှန်များကို မိမိ လိုအပ်ချက်အလိုက် ရွေးချယ်ဖတ်ရှုနိုင်ပါသည်:
 
-### ၁။ [စနစ်မိတ်ဆက်နှင့် အသုံးဝင်ပုံ လုပ်ဆောင်ချက်များ (OVERVIEW.md)](OVERVIEW.md)
+### ၁။ [CFMeeting ဗားရှင်း (၃) မျိုး နှိုင်းယှဉ်ချက်နှင့် အသုံးပြုနည်းလမ်းညွှန် (VERSIONS_GUIDE.md)](VERSIONS_GUIDE.md)
+* Original Worker (`apps/server-original`) vs Enhanced Custom Worker (`apps/server`) vs VPS Docker Edition (`apps/server-vps`)
+* ဗားရှင်း (၃) မျိုး ခြုံငုံနှိုင်းယှဉ်ချက် ဇယား
+* မိမိ လိုအပ်ချက်အလိုက် မည်သည့်ဗားရှင်းကို ရွေးချယ်အသုံးပြုသင့်သလဲ
+
+---
+
+### ၂။ [စနစ်မိတ်ဆက်နှင့် အသုံးဝင်ပုံ လုပ်ဆောင်ချက်များ (OVERVIEW.md)](OVERVIEW.md)
 * CFMeeting ဆိုတာ ဘာလဲ?
 * အခြား Zoom / Google Meet / VPS များနှင့် နှိုင်းယှဉ်ချက် ဇယား (Server စရိတ် Zero Cost, Zero Maintenance, မြန်နှုန်းမြင့် ကွန်ရက်)
 * ပါဝင်သော စွမ်းဆောင်ရည်များ (Conference, Webinar, Screen Share, Chat, Polls, Mute All, Breakout Rooms)
@@ -20,7 +27,7 @@
 
 ---
 
-### ၂။ [Cloudflare Setup & Deploy လုပ်နည်း လမ်းညွှန် (SETUP_GUIDE.md)](SETUP_GUIDE.md)
+### ၃။ [Cloudflare Setup & Deploy လုပ်နည်း လမ်းညွှန် (SETUP_GUIDE.md)](SETUP_GUIDE.md)
 * ကြိုတင်လိုအပ်ချက်များ (Node.js, Cloudflare Account)
 * Cloudflare API Token နှင့် Account ID ရယူနည်း
 * Cloudflare Workers ပေါ်သို့ ၁၀၀% Serverless အပြည့်အစုံ Deploy တင်နည်း
@@ -29,7 +36,7 @@
 
 ---
 
-### ၃။ [Cloud Recording လုပ်ငန်းစဉ် လမ်းညွှန် (RECORDING_GUIDE.md)](RECORDING_GUIDE.md)
+### ၄။ [Cloud Recording လုပ်ငန်းစဉ် လမ်းညွှန် (RECORDING_GUIDE.md)](RECORDING_GUIDE.md)
 * Cloudflare RealtimeKit နှင့် Cloudflare R2 Storage ပေါင်းစပ်အလုပ်လုပ်ပုံ
 * Cloudflare R2 Bucket (`cfmeeting-records`) ဆောက်လုပ်ပြီး ချိတ်ဆက်နည်း
 * လုံခြုံရေးဆိုင်ရာ Environment Variables များ (`.env` နှင့် `wrangler secret`)
@@ -38,7 +45,7 @@
 
 ---
 
-### ၄။ [VPS Version တပ်ဆင်အသုံးပြုနည်း လမ်းညွှန် (VPS_SETUP_GUIDE.md)](VPS_SETUP_GUIDE.md)
+### ၅။ [VPS Version တပ်ဆင်အသုံးပြုနည်း လမ်းညွှန် (VPS_SETUP_GUIDE.md)](VPS_SETUP_GUIDE.md)
 * VPS Hybrid Architecture (Node.js/Docker + Cloudflare RealtimeKit + VPS Local Recording Storage)
 * VPS Hardware လိုအပ်ချက်များ
 * Docker & Docker Compose (Caddy Auto-SSL) ဖြင့် တစ်ဆင့်ချင်း တပ်ဆင်နည်း
