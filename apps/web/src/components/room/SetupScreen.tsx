@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRealtimeKitMeeting, useRealtimeKitSelector } from '@cloudflare/realtimekit-react';
 import { RtkAudioVisualizer, RtkAvatar, RtkNameTag, RtkParticipantTile } from '@cloudflare/realtimekit-react-ui';
 import type { MeetingInfo } from '../../lib/backend';
+import { findMatchingDevice, getSavedUserDevices, saveUserDevice } from '../../lib/devicePreferences';
 import { useI18n } from '../../lib/i18n';
 import { isElectron, supportsScreenShare } from '../../lib/platform';
 import { Icon } from '../Icons';
@@ -47,11 +48,58 @@ export function SetupScreen({ meetingInfo, isHost, onBack, autoStart }: { meetin
     let alive = true;
     const refresh = async () => {
       try {
-        const [audio, video, speaker] = await Promise.all([meeting.self.getAudioDevices(), meeting.self.getVideoDevices(), meeting.self.getSpeakerDevices()]);
+        const [audio, video, speaker] = await Promise.all([
+          meeting.self.getAudioDevices(),
+          meeting.self.getVideoDevices(),
+          meeting.self.getSpeakerDevices(),
+        ]);
         if (!alive) return;
         setDevices({ audio, video, speaker });
+
         const cur = meeting.self.getCurrentDevices();
-        setCurrent({ audio: cur.audio?.deviceId, video: cur.video?.deviceId, speaker: cur.speaker?.deviceId });
+        const saved = getSavedUserDevices();
+
+        // 1. Audio / Mic
+        let activeAudioId = cur.audio?.deviceId;
+        const matchedAudio = findMatchingDevice(saved.audioId, saved.audioLabel, audio);
+        if (matchedAudio) {
+          if (matchedAudio.deviceId !== activeAudioId) {
+            await meeting.self.setDevice(matchedAudio).catch(() => {});
+          }
+          activeAudioId = matchedAudio.deviceId;
+        } else if (!activeAudioId && audio.length > 0) {
+          activeAudioId = audio[0].deviceId;
+        }
+
+        // 2. Video / Camera
+        let activeVideoId = cur.video?.deviceId;
+        const matchedVideo = findMatchingDevice(saved.videoId, saved.videoLabel, video);
+        if (matchedVideo) {
+          if (matchedVideo.deviceId !== activeVideoId) {
+            await meeting.self.setDevice(matchedVideo).catch(() => {});
+          }
+          activeVideoId = matchedVideo.deviceId;
+        } else if (!activeVideoId && video.length > 0) {
+          activeVideoId = video[0].deviceId;
+        }
+
+        // 3. Speaker
+        let activeSpeakerId = cur.speaker?.deviceId;
+        const matchedSpeaker = findMatchingDevice(saved.speakerId, saved.speakerLabel, speaker);
+        if (matchedSpeaker) {
+          if (matchedSpeaker.deviceId !== activeSpeakerId) {
+            await meeting.self.setDevice(matchedSpeaker).catch(() => {});
+          }
+          activeSpeakerId = matchedSpeaker.deviceId;
+        } else if (!activeSpeakerId && speaker.length > 0) {
+          activeSpeakerId = speaker[0].deviceId;
+        }
+
+        setCurrent({
+          audio: activeAudioId,
+          video: activeVideoId,
+          speaker: activeSpeakerId,
+        });
       } catch {
         /* devices unavailable until permission is granted */
       }
@@ -75,6 +123,7 @@ export function SetupScreen({ meetingInfo, isHost, onBack, autoStart }: { meetin
   const setDevice = async (kind: keyof Devices, deviceId: string) => {
     const device = devices[kind].find((d) => d.deviceId === deviceId);
     if (!device) return;
+    saveUserDevice(kind, device);
     setCurrent((c) => ({ ...c, [kind]: deviceId }));
     try {
       await meeting.self.setDevice(device);

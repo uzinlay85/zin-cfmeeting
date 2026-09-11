@@ -3,6 +3,7 @@ import { RealtimeKitProvider, useRealtimeKitClient } from '@cloudflare/realtimek
 import { RtkDialogManager, RtkUiProvider, defaultLanguage, getInitialStates, provideRtkDesignSystem, useLanguage, type States } from '@cloudflare/realtimekit-react-ui';
 import type { MeetingInfo } from '../lib/backend';
 import type { Lang } from '../lib/i18n';
+import { findMatchingDevice, getSavedUserDevices } from '../lib/devicePreferences';
 import { useWakeLock } from '../lib/device';
 import { rtkLangZh } from '../lib/rtk-lang-zh';
 import { Spinner } from './ui';
@@ -73,6 +74,48 @@ export function MeetingRoom({ token, lang, meetingInfo, isHost, connectingLabel,
       modules: { devTools: { logs: false } },
     }).catch((err: unknown) => onError(err instanceof Error ? err : new Error(String(err))));
   }, [token, initMeeting, onError]);
+
+  // Keep chosen devices persistent across meetings and device list updates
+  useEffect(() => {
+    if (!meeting) return;
+    const restoreSavedDevices = async () => {
+      try {
+        const saved = getSavedUserDevices();
+        if (!saved.audioId && !saved.videoId && !saved.speakerId && !saved.audioLabel && !saved.videoLabel && !saved.speakerLabel) {
+          return;
+        }
+        const [audioDevs, videoDevs, speakerDevs] = await Promise.all([
+          meeting.self.getAudioDevices(),
+          meeting.self.getVideoDevices(),
+          meeting.self.getSpeakerDevices(),
+        ]);
+        const cur = meeting.self.getCurrentDevices();
+
+        const matchAudio = findMatchingDevice(saved.audioId, saved.audioLabel, audioDevs);
+        if (matchAudio && matchAudio.deviceId !== cur.audio?.deviceId) {
+          await meeting.self.setDevice(matchAudio).catch(() => {});
+        }
+
+        const matchVideo = findMatchingDevice(saved.videoId, saved.videoLabel, videoDevs);
+        if (matchVideo && matchVideo.deviceId !== cur.video?.deviceId) {
+          await meeting.self.setDevice(matchVideo).catch(() => {});
+        }
+
+        const matchSpeaker = findMatchingDevice(saved.speakerId, saved.speakerLabel, speakerDevs);
+        if (matchSpeaker && matchSpeaker.deviceId !== cur.speaker?.deviceId) {
+          await meeting.self.setDevice(matchSpeaker).catch(() => {});
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+
+    void restoreSavedDevices();
+    meeting.self.on('deviceListUpdate', restoreSavedDevices);
+    return () => {
+      meeting.self.off('deviceListUpdate', restoreSavedDevices);
+    };
+  }, [meeting]);
 
   useEffect(() => {
     if (!meeting) return;
