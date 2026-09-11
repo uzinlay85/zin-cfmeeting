@@ -406,25 +406,35 @@ app.get('/recordings', (c) => {
       --muted: #94a3b8;
       --primary: #3b82f6;
       --primary-hover: #2563eb;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
       --border: #334155;
       --success: #10b981;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 24px 16px; min-height: 100vh; }
     .container { max-width: 900px; margin: 0 auto; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
     h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 8px; }
-    .btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; transition: background 0.2s; }
+    .header-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn { background: var(--primary); color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: background 0.2s; }
     .btn:hover { background: var(--primary-hover); }
     .btn-secondary { background: #334155; }
     .btn-secondary:hover { background: #475569; }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .btn-danger:hover { background: var(--danger); color: white; }
+    .btn-danger-solid { background: var(--danger); color: white; }
+    .btn-danger-solid:hover { background: var(--danger-hover); }
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
     .rec-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
     .rec-item:last-child { border-bottom: none; }
-    .rec-info { flex: 1; min-width: 240px; }
-    .rec-title { font-weight: 600; font-size: 1rem; margin-bottom: 4px; color: #e2e8f0; word-break: break-all; }
-    .rec-meta { font-size: 0.85rem; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
-    .rec-actions { display: flex; gap: 8px; }
+    .rec-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 240px; }
+    .rec-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); }
+    .rec-info { flex: 1; }
+    .rec-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; color: #e2e8f0; word-break: break-all; }
+    .rec-meta { font-size: 0.82rem; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
+    .rec-actions { display: flex; gap: 6px; align-items: center; }
     .login-box { max-width: 400px; margin: 80px auto; text-align: center; }
     .input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: white; margin-bottom: 16px; font-size: 1rem; }
     .input:focus { outline: 2px solid var(--primary); }
@@ -438,7 +448,7 @@ app.get('/recordings', (c) => {
   <div class="container">
     <header>
       <h1>🎥 CFMeeting Recordings</h1>
-      <div id="headerActions" style="display:none;">
+      <div id="headerActions" class="header-btns" style="display:none;">
         <button class="btn btn-secondary" onclick="syncRecordings()" id="syncBtn">🔄 Sync Cloudflare</button>
         <button class="btn btn-secondary" onclick="logout()">🔒 Logout</button>
       </div>
@@ -454,6 +464,15 @@ app.get('/recordings', (c) => {
 
     <div id="mainView" style="display:none;">
       <div class="card">
+        <div class="toolbar" id="toolbar">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.9rem; font-weight:500;">
+            <input type="checkbox" id="selectAllBox" onchange="toggleSelectAll(this)" style="width:18px; height:18px; accent-color:var(--primary);" />
+            <span>Select All</span>
+          </label>
+          <button class="btn btn-danger-solid" id="batchDelBtn" style="display:none;" onclick="deleteSelected()">
+            🗑️ Delete Selected (<span id="selectedCount">0</span>)
+          </button>
+        </div>
         <div id="recList">Loading recordings...</div>
       </div>
     </div>
@@ -465,6 +484,8 @@ app.get('/recordings', (c) => {
   </div>
 
   <script>
+    let currentRecordings = [];
+
     function getStoredKey() {
       return localStorage.getItem('vps_rec_key') || '';
     }
@@ -506,10 +527,12 @@ app.get('/recordings', (c) => {
           return;
         }
         const data = await res.json();
+        currentRecordings = data.recordings || [];
         document.getElementById('loginView').style.display = 'none';
         document.getElementById('mainView').style.display = 'block';
         document.getElementById('headerActions').style.display = 'flex';
-        renderList(data.recordings || [], key);
+        renderList(currentRecordings, key);
+        updateBatchBtn();
       } catch (err) {
         document.getElementById('recList').innerHTML = '<p style="color:#ef4444">Error loading recordings</p>';
       }
@@ -528,28 +551,98 @@ app.get('/recordings', (c) => {
       const el = document.getElementById('recList');
       if (list.length === 0) {
         el.innerHTML = '<p style="text-align:center; color:var(--muted); padding:40px 0;">No recordings stored on VPS yet.</p>';
+        document.getElementById('toolbar').style.display = 'none';
         return;
       }
+      document.getElementById('toolbar').style.display = 'flex';
       el.innerHTML = list.map(r => {
         const date = new Date(r.createdAt).toLocaleString();
         const size = formatBytes(r.sizeBytes);
         return \`
           <div class="rec-item">
-            <div class="rec-info">
-              <div class="rec-title">\${r.filename}</div>
-              <div class="rec-meta">
-                <span>📅 \${date}</span>
-                <span>📦 \${size}</span>
-                <span class="badge">Meeting: \${r.meetingId}</span>
+            <div class="rec-left">
+              <input type="checkbox" class="rec-checkbox item-cb" data-file="\${r.filename}" onchange="updateBatchBtn()" />
+              <div class="rec-info">
+                <div class="rec-title">\${r.filename}</div>
+                <div class="rec-meta">
+                  <span>📅 \${date}</span>
+                  <span>📦 \${size}</span>
+                  <span class="badge">Meeting: \${r.meetingId}</span>
+                </div>
               </div>
             </div>
             <div class="rec-actions">
               <button class="btn" onclick="playVideo('\${r.streamUrl}')">▶ Play</button>
               <a class="btn btn-secondary" href="\${r.downloadUrl}" download>⬇ Download</a>
+              <button class="btn btn-danger" onclick="deleteSingle('\${r.filename}')">🗑️ Delete</button>
             </div>
           </div>
         \`;
       }).join('');
+    }
+
+    function toggleSelectAll(master) {
+      const cbs = document.querySelectorAll('.item-cb');
+      cbs.forEach(cb => cb.checked = master.checked);
+      updateBatchBtn();
+    }
+
+    function updateBatchBtn() {
+      const checked = document.querySelectorAll('.item-cb:checked');
+      const count = checked.length;
+      const batchBtn = document.getElementById('batchDelBtn');
+      const countEl = document.getElementById('selectedCount');
+      countEl.innerText = count;
+      batchBtn.style.display = count > 0 ? 'inline-flex' : 'none';
+
+      const master = document.getElementById('selectAllBox');
+      const all = document.querySelectorAll('.item-cb');
+      if (all.length > 0 && count === all.length) {
+        master.checked = true;
+      } else {
+        master.checked = false;
+      }
+    }
+
+    async function deleteSingle(filename) {
+      if (!confirm('ဒီ recording ဖိုင်ကို VPS Hard Disk မှ ဖျက်ရန် သေချာပါသလား?')) return;
+      const key = getStoredKey();
+      try {
+        const res = await fetch('/api/vps/recordings/' + encodeURIComponent(filename) + '?key=' + encodeURIComponent(key), {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (data.ok) {
+          await loadList(key);
+        } else {
+          alert(data.error?.message || 'Failed to delete');
+        }
+      } catch (err) {
+        alert('Error deleting recording');
+      }
+    }
+
+    async function deleteSelected() {
+      const checked = Array.from(document.querySelectorAll('.item-cb:checked')).map(cb => cb.getAttribute('data-file'));
+      if (checked.length === 0) return;
+      if (!confirm('ရွေးချယ်ထားသော recording ဖိုင် (' + checked.length + ') ခုကို ဖျက်ရန် သေချာပါသလား?')) return;
+
+      const key = getStoredKey();
+      try {
+        const res = await fetch('/api/vps/recordings/delete-batch?key=' + encodeURIComponent(key), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filenames: checked })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          await loadList(key);
+        } else {
+          alert(data.error?.message || 'Failed to delete selected');
+        }
+      } catch (err) {
+        alert('Error deleting recordings');
+      }
     }
 
     function playVideo(url) {
