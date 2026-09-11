@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRealtimeKitMeeting, useRealtimeKitSelector } from '@cloudflare/realtimekit-react';
 import { RtkGrid, RtkNotifications, RtkParticipantsAudio, RtkSidebar, RtkStage, type States } from '@cloudflare/realtimekit-react-ui';
-import { getServerUrl, type MeetingInfo } from '../../lib/backend';
+import { type MeetingInfo } from '../../lib/backend';
 import { useI18n } from '../../lib/i18n';
 import { supportsScreenShare } from '../../lib/platform';
 import { Icon } from '../Icons';
@@ -26,13 +26,11 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
   const title = useRealtimeKitSelector((m) => m.meta.meetingTitle) || meetingInfo.title;
   const viewType = useRealtimeKitSelector((m) => m.meta.viewType);
   const stageStatus = useRealtimeKitSelector((m) => m.stage.status);
-  const recordingState = useRealtimeKitSelector((m) => m.recording.recordingState);
   const chatCount = useRealtimeKitSelector((m) => m.chat.messages.length);
   const canAudio = useRealtimeKitSelector((m) => m.self.permissions.canProduceAudio) === 'ALLOWED';
   const canVideo = useRealtimeKitSelector((m) => m.self.permissions.canProduceVideo) === 'ALLOWED';
   const canShare = useRealtimeKitSelector((m) => m.self.permissions.canProduceScreenshare) === 'ALLOWED' && supportsScreenShare;
   const perms = meeting.self.permissions as unknown as Record<string, unknown>;
-  const canRecord = perms.canRecord === true;
   const canMuteAll = perms.canDisableParticipantAudio === true;
   const canBreakout = Boolean((perms.connectedMeetings as { canAlterConnectedMeetings?: boolean } | undefined)?.canAlterConnectedMeetings);
   const isWebinarViewer = viewType === 'WEBINAR' && stageStatus !== 'ON_STAGE';
@@ -65,39 +63,9 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
   };
   const fail = (err: unknown) => toast((err as Error)?.message || t('error.generic'), 'error');
 
-  const [recActive, setRecActive] = useState(false);
-  const isRecording = recordingState === 'RECORDING' || recordingState === 'STARTING' || recActive;
-
   const toggleMic = () => (audioEnabled ? meeting.self.disableAudio() : meeting.self.enableAudio()).catch(fail);
   const toggleCam = () => (videoEnabled ? meeting.self.disableVideo() : meeting.self.enableVideo()).catch(fail);
   const toggleShare = () => (screenShareEnabled ? meeting.self.disableScreenShare() : meeting.self.enableScreenShare()).catch(fail);
-  const toggleRecording = async () => {
-    const isRec = isRecording;
-    const action = isRec ? 'stop' : 'start';
-    try {
-      setRecActive(!isRec);
-      if (isRec) {
-        meeting.recording?.stop?.().catch(() => {});
-      } else {
-        meeting.recording?.start?.().catch(() => {});
-      }
-      const serverUrl = getServerUrl();
-      const base = serverUrl || '';
-      const endpoint = `${base}/api/meetings/${encodeURIComponent(meetingInfo.ref)}/recording/${action}`;
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
-      if (!res.ok) {
-        setRecActive(isRec);
-        throw new Error(data?.error?.message || `Failed to ${action} recording`);
-      }
-      toast(isRec ? 'Recording stopped' : 'Recording started', 'info');
-    } catch (err) {
-      fail(err);
-    }
-  };
   const toggleFullscreen = () => {
     if (document.fullscreenElement) void document.exitFullscreen();
     else void document.documentElement.requestFullscreen().catch(fail);
@@ -142,11 +110,6 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
         <span className="chip">
           <Icon name="users" size={14} /> {t('room.people').replace('{n}', String(joinedCount + 1))}
         </span>
-        {isRecording ? (
-          <span className="chip chip-rec">
-            <span className="rec-dot" /> {t('room.recording')}
-          </span>
-        ) : null}
         <span className="room-spacer" />
         <button type="button" className="chip chip-btn" onClick={onInvite}>
           <Icon name="user-plus" size={15} /> {!isMobile ? t('ctrl.invite') : null}
@@ -196,7 +159,7 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
                 <Icon name={fullscreen ? 'minimize' : 'maximize'} size={18} /> {fullscreen ? t('ctrl.exitFullscreen') : t('ctrl.fullscreen')}
               </button>
             ) : null}
-            {canMuteAll || canRecord || canBreakout ? <div className="more-sep" /> : null}
+            {canMuteAll || canBreakout ? <div className="more-sep" /> : null}
             {canMuteAll ? (
               <button type="button" className="more-item" onClick={() => { setMore(false); emit({ activeMuteAllConfirmation: true }); }}>
                 <Icon name="mic-off" size={18} /> {t('ctrl.muteAll')}
@@ -205,11 +168,6 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
             {canBreakout ? (
               <button type="button" className="more-item" onClick={() => { setMore(false); emit({ activeBreakoutRoomsManager: { active: true, mode: 'create' } }); }}>
                 <Icon name="layers" size={18} /> {t('ctrl.breakout')}
-              </button>
-            ) : null}
-            {canRecord ? (
-              <button type="button" className={`more-item ${isRecording ? 'danger' : ''}`} onClick={() => { setMore(false); void toggleRecording(); }}>
-                <Icon name="record" size={18} /> {isRecording ? t('ctrl.stopRecord') : t('ctrl.record')}
               </button>
             ) : null}
           </div>
