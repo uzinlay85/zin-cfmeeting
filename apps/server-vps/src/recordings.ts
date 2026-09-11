@@ -29,7 +29,7 @@ function sanitizeTitle(title?: string): string {
   return cleaned || 'Meeting';
 }
 
-function formatDateTime(isoString?: string): { date: string; time: string; full: string } {
+function formatDateTime(isoString?: string, timeZone = 'Asia/Yangon'): { date: string; time: string; full: string } {
   let d = new Date();
   if (isoString) {
     const parsed = new Date(isoString);
@@ -37,17 +37,42 @@ function formatDateTime(isoString?: string): { date: string; time: string; full:
       d = parsed;
     }
   }
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const year = d.getFullYear();
-  const month = pad(d.getMonth() + 1);
-  const day = pad(d.getDate());
-  const hours = pad(d.getHours());
-  const minutes = pad(d.getMinutes());
-  const seconds = pad(d.getSeconds());
 
-  const date = `${year}-${month}-${day}`;
-  const time = `${hours}-${minutes}-${seconds}`;
-  return { date, time, full: `${date}_${time}` };
+  try {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: timeZone || 'Asia/Yangon',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(d);
+    const getPart = (type: string) => parts.find((p) => p.type === type)?.value || '00';
+    const year = getPart('year');
+    const month = getPart('month');
+    const day = getPart('day');
+    const hour = getPart('hour');
+    const minute = getPart('minute');
+    const second = getPart('second');
+
+    const date = `${year}-${month}-${day}`;
+    const time = `${hour}-${minute}-${second}`;
+    return { date, time, full: `${date}_${time}` };
+  } catch {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const year = d.getUTCFullYear();
+    const month = pad(d.getUTCMonth() + 1);
+    const day = pad(d.getUTCDate());
+    const hours = pad(d.getUTCHours());
+    const minutes = pad(d.getUTCMinutes());
+    const seconds = pad(d.getUTCSeconds());
+    const date = `${year}-${month}-${day}`;
+    const time = `${hours}-${minutes}-${seconds}`;
+    return { date, time, full: `${date}_${time}` };
+  }
 }
 
 export class RecordingManager {
@@ -261,7 +286,7 @@ export class RecordingManager {
         }
 
         const safeTitle = sanitizeTitle(meetingTitle);
-        const { full: dateTimeStr } = formatDateTime(item.invoked_time || item.started_time || item.created_at);
+        const { full: dateTimeStr } = formatDateTime(item.invoked_time || item.started_time || item.created_at, this.env.TIMEZONE);
         const shortRecId = item.id.slice(0, 8);
 
         // Format: [MeetingTitle]_[Date]_[Time]_[ShortID].mp4

@@ -11,6 +11,8 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
+      - TZ=Asia/Yangon
+      - TIMEZONE=Asia/Yangon
       - RECORDINGS_DIR=/app/recordings
       - STATIC_DIR=/app/public
     volumes:

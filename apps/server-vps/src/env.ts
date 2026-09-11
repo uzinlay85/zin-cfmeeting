@@ -37,6 +37,7 @@ export interface VpsEnv {
   RECORDINGS_DIR: string;
   AUTO_DOWNLOAD_RECORDINGS: boolean;
   SYNC_INTERVAL_SECS: number;
+  TIMEZONE: string;
 
   // Static web assets path
   STATIC_DIR: string;
@@ -74,6 +75,7 @@ export function loadEnv(): VpsEnv {
     RECORDINGS_DIR: recordingsDir,
     AUTO_DOWNLOAD_RECORDINGS: process.env.AUTO_DOWNLOAD_RECORDINGS !== 'false',
     SYNC_INTERVAL_SECS: Number(process.env.SYNC_INTERVAL_SECS || 30),
+    TIMEZONE: process.env.TIMEZONE?.trim() || process.env.TZ?.trim() || 'Asia/Yangon',
 
     STATIC_DIR: staticDir,
   };
