@@ -224,10 +224,12 @@ cd ~/zin-cfmeeting/apps/server-vps
 sudo docker compose logs -f --tail=50 app
 ```
 
-### (ဃ) Cloudflare မှ Recording အသစ်များကို ချက်ချင်း Manual Sync ပြုလုပ်ရန်
-```bash
-curl -X POST "http://127.0.0.1:3030/api/vps/recordings/sync?key=Zinmeet456"
-```
+### (င) Recording ဖိုင် အမည်ပေးပုံစံ (Human-Friendly Naming Format)
+Cloudflare Background Sync Service မှ VPS Hard Disk သို့ MP4 ဖိုင်များ ဒေါင်းလုဒ်ဆွဲသည့်အခါ အောက်ပါအတိုင်း အစည်းအဝေးခေါင်းစဉ်၊ ရက်စွဲနှင့် အချိန်ဖြင့် စနစ်တကျ အမည်ပေးသိမ်းဆည်းပါသည်:
+
+- **ပုံစံ (Format):** `[MeetingTitle]_[YYYY-MM-DD]_[HH-mm-ss]_[ShortID].mp4`
+- **ဥပမာ (Example):** `General_Meeting_2026-09-11_21-35-10_fff37534.mp4`
+- ဖိုင်တစ်ခုချင်းစီအတွက် RealtimeKit အချက်အလက်များကို enriched `.json` metadata ဖိုင်အဖြစ်ပါ သိမ်းဆည်းပေးထားပါသည်။
 
 ---
 

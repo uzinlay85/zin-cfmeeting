@@ -9,10 +9,45 @@ export interface LocalRecording {
   filename: string;
   recordingId: string;
   meetingId: string;
+  meetingTitle?: string;
   sizeBytes: number;
   createdAt: string;
   downloadUrl?: string;
+  streamUrl?: string;
   meta?: Record<string, unknown>;
+}
+
+function sanitizeTitle(title?: string): string {
+  if (!title) return 'Meeting';
+  // Remove illegal characters for filesystems (/ \ : * ? " < > |) and normalize whitespace
+  const cleaned = title
+    .trim()
+    .replace(/[/\\:*?"<>|]/g, '_')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return cleaned || 'Meeting';
+}
+
+function formatDateTime(isoString?: string): { date: string; time: string; full: string } {
+  let d = new Date();
+  if (isoString) {
+    const parsed = new Date(isoString);
+    if (!isNaN(parsed.getTime())) {
+      d = parsed;
+    }
+  }
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+  const seconds = pad(d.getSeconds());
+
+  const date = `${year}-${month}-${day}`;
+  const time = `${hours}-${minutes}-${seconds}`;
+  return { date, time, full: `${date}_${time}` };
 }
 
 export class RecordingManager {
@@ -28,6 +63,30 @@ export class RecordingManager {
     if (!fs.existsSync(this.dir)) {
       fs.mkdirSync(this.dir, { recursive: true });
     }
+  }
+
+  getExistingRecordingIds(): Set<string> {
+    const ids = new Set<string>();
+    if (!fs.existsSync(this.dir)) return ids;
+    const files = fs.readdirSync(this.dir);
+    for (const f of files) {
+      if (f.endsWith('.json') && !f.startsWith('.')) {
+        try {
+          const meta = JSON.parse(fs.readFileSync(path.join(this.dir, f), 'utf8'));
+          if (meta?.id) ids.add(meta.id);
+        } catch {
+          /* ignore */
+        }
+      } else if (f.endsWith('.mp4')) {
+        const base = f.replace(/\.mp4$/, '');
+        const parts = base.split('_');
+        if (parts.length > 0) {
+          const lastPart = parts[parts.length - 1];
+          if (lastPart) ids.add(lastPart);
+        }
+      }
+    }
+    return ids;
   }
 
   listLocal(): LocalRecording[] {
@@ -53,14 +112,16 @@ export class RecordingManager {
 
       const parts = f.replace(/\.mp4$/, '').split('_');
       const meetingId = (meta?.meeting_id as string) || parts[0] || 'unknown';
-      const recordingId = (meta?.id as string) || parts[1] || f;
+      const recordingId = (meta?.id as string) || parts[parts.length - 1] || f;
+      const meetingTitle = (meta?.meeting_title as string) || (meta?.title as string) || undefined;
 
       recordings.push({
         filename: f,
         recordingId,
         meetingId,
+        meetingTitle,
         sizeBytes: stat.size,
-        createdAt: stat.birthtime.toISOString() || stat.mtime.toISOString(),
+        createdAt: (meta?.created_at as string) || stat.birthtime.toISOString() || stat.mtime.toISOString(),
         meta,
       });
     }
@@ -118,7 +179,7 @@ export class RecordingManager {
     }
     if (!recordingId) {
       const parts = safeName.replace(/\.mp4$/, '').split('_');
-      recordingId = parts[2] || parts[1] || '';
+      recordingId = parts[parts.length - 1] || parts[1] || '';
     }
 
     if (recordingId) {
@@ -166,6 +227,7 @@ export class RecordingManager {
 
     try {
       const deletedIds = this.getDeletedIds();
+      const existingIds = this.getExistingRecordingIds();
       const rtk = new RtkApi(this.env);
       const items = await rtk.listRecordings();
 
@@ -181,18 +243,41 @@ export class RecordingManager {
           continue;
         }
 
-        const datePrefix = (item.invoked_time || item.started_time || item.created_at || new Date().toISOString()).slice(0, 10);
-        const filename = `${datePrefix}_${item.meeting_id}_${item.id}.mp4`;
-        const targetPath = path.join(this.dir, filename);
-        const metaPath = path.join(this.dir, `${datePrefix}_${item.meeting_id}_${item.id}.json`);
+        // Check if recording is already saved (either exact ID match or file already exists)
+        if (existingIds.has(item.id)) {
+          skipped++;
+          continue;
+        }
 
-        // Check if already downloaded
+        // Fetch meeting details to get user-friendly title
+        let meetingTitle = 'Meeting';
+        try {
+          const meeting = await rtk.getMeeting(item.meeting_id);
+          if (meeting?.title) {
+            meetingTitle = meeting.title;
+          }
+        } catch {
+          /* fallback to default title */
+        }
+
+        const safeTitle = sanitizeTitle(meetingTitle);
+        const { full: dateTimeStr } = formatDateTime(item.invoked_time || item.started_time || item.created_at);
+        const shortRecId = item.id.slice(0, 8);
+
+        // Format: [MeetingTitle]_[Date]_[Time]_[ShortID].mp4
+        // Example: General_Meeting_2026-09-11_21-35-10_fff37534.mp4
+        const fileBase = `${safeTitle}_${dateTimeStr}_${shortRecId}`;
+        const filename = `${fileBase}.mp4`;
+        const targetPath = path.join(this.dir, filename);
+        const metaPath = path.join(this.dir, `${fileBase}.json`);
+
+        // Check if already downloaded on disk
         if (fs.existsSync(targetPath) && fs.statSync(targetPath).size > 0) {
           skipped++;
           continue;
         }
 
-        console.log(`[VPS Recordings] Downloading recording ${item.id} to ${filename}...`);
+        console.log(`[VPS Recordings] Downloading recording (${meetingTitle}) to ${filename}...`);
 
         try {
           const res = await fetch(downloadUrl);
@@ -208,10 +293,15 @@ export class RecordingManager {
           const nodeReadable = Readable.fromWeb(res.body);
           await pipeline(nodeReadable, fileStream);
 
-          // Save metadata
-          fs.writeFileSync(metaPath, JSON.stringify(item, null, 2), 'utf8');
+          // Save enriched metadata alongside .mp4
+          const enrichedMeta = {
+            ...item,
+            meeting_title: meetingTitle,
+          };
+          fs.writeFileSync(metaPath, JSON.stringify(enrichedMeta, null, 2), 'utf8');
           console.log(`[VPS Recordings] Successfully saved ${filename} (${fs.statSync(targetPath).size} bytes)`);
           downloaded++;
+          existingIds.add(item.id);
         } catch (err) {
           console.error(`[VPS Recordings] Error downloading ${item.id}:`, err);
           errors++;

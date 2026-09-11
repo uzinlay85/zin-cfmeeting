@@ -10,12 +10,14 @@ interface RecordingItem {
   filename: string;
   recordingId: string;
   meetingId: string;
+  meetingTitle?: string;
   sizeBytes: number;
   createdAt: string;
   streamUrl?: string;
   downloadUrl?: string;
   meta?: {
     meeting_id?: string;
+    meeting_title?: string;
     id?: string;
     started_time?: string;
     duration?: number;
@@ -319,7 +321,7 @@ export function RecordingsPage() {
                   const base = getServerUrl();
                   const streamUrl = `${base}/api/vps/recordings/${encodeURIComponent(r.filename)}?key=${encodeURIComponent(accessCode)}`;
                   const downloadUrl = `${base}/api/vps/recordings/${encodeURIComponent(r.filename)}?key=${encodeURIComponent(accessCode)}&download=1`;
-                  const title = r.meetingId !== 'unknown' ? `Meeting: ${r.meetingId.slice(0, 8)}...` : r.filename;
+                  const title = r.meetingTitle || (r.filename.endsWith('.mp4') ? r.filename.replace(/\.mp4$/, '') : (r.meetingId !== 'unknown' ? `Meeting: ${r.meetingId.slice(0, 8)}...` : r.filename));
                   const isChecked = selected.has(r.filename);
 
                   return (

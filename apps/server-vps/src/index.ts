@@ -563,8 +563,9 @@ app.get('/recordings', (c) => {
             <div class="rec-left">
               <input type="checkbox" class="rec-checkbox item-cb" data-file="\${r.filename}" onchange="updateBatchBtn()" />
               <div class="rec-info">
-                <div class="rec-title">\${r.filename}</div>
+                <div class="rec-title">\${r.meetingTitle ? r.meetingTitle : r.filename}</div>
                 <div class="rec-meta">
+                  <span>📁 \${r.filename}</span>
                   <span>📅 \${date}</span>
                   <span>📦 \${size}</span>
                   <span class="badge">Meeting: \${r.meetingId}</span>
