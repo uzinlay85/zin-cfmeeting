@@ -365,6 +365,31 @@ app.get('/api/vps/recordings/:filename', (c) => {
   });
 });
 
+/** Delete a single recording from VPS disk */
+app.delete('/api/vps/recordings/:filename', (c) => {
+  if (!checkRecordingAuth(c)) {
+    return jsonError(c, 401, 'unauthorized', 'Access code required');
+  }
+  const filename = c.req.param('filename');
+  const deleted = recordingManager.deleteRecording(filename);
+  if (!deleted) return jsonError(c, 404, 'not_found', 'Recording file not found');
+  return c.json({ ok: true, deleted: true, filename });
+});
+
+/** Batch delete multiple recordings from VPS disk */
+app.post('/api/vps/recordings/delete-batch', async (c) => {
+  if (!checkRecordingAuth(c)) {
+    return jsonError(c, 401, 'unauthorized', 'Access code required');
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { filenames?: string[] };
+  const filenames = Array.isArray(body.filenames) ? body.filenames : [];
+  if (filenames.length === 0) {
+    return jsonError(c, 400, 'bad_request', 'No filenames provided for deletion');
+  }
+  const result = recordingManager.deleteRecordings(filenames);
+  return c.json({ ok: true, ...result });
+});
+
 /** Password-Protected Web UI for Recordings Dashboard */
 app.get('/recordings', (c) => {
   const html = `<!DOCTYPE html>

@@ -53,8 +53,13 @@ export function RecordingsPage() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [recordings, setRecordings] = useState<RecordingItem[]>([]);
   const [activeVideo, setActiveVideo] = useState<{ url: string; title: string } | null>(null);
+
+  // Selection mode for batch delete
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const fetchRecordings = async (key: string) => {
     setLoading(true);
@@ -130,15 +135,102 @@ export function RecordingsPage() {
     }
   };
 
+  const toggleSelect = (filename: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(filename)) next.delete(filename);
+      else next.add(filename);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (selected.size === recordings.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(recordings.map((r) => r.filename)));
+    }
+  };
+
+  const deleteSingle = async (filename: string) => {
+    if (!window.confirm('ဒီ recording ဖိုင်ကို VPS Hard Disk မှ ဖျက်ရန် သေချာပါသလား?')) return;
+    setDeleting(true);
+    try {
+      const base = getServerUrl();
+      const res = await fetch(`${base}/api/vps/recordings/${encodeURIComponent(filename)}?key=${encodeURIComponent(accessCode)}`, {
+        method: 'DELETE',
+      });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: { message?: string } };
+      if (data.ok) {
+        toast('Recording ကို ဖျက်ပြီးပါပြီ', 'success');
+        setRecordings((prev) => prev.filter((r) => r.filename !== filename));
+        setSelected((prev) => {
+          const next = new Set(prev);
+          next.delete(filename);
+          return next;
+        });
+      } else {
+        toast(data.error?.message || 'Delete failed', 'error');
+      }
+    } catch {
+      toast('Failed to delete recording', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const deleteBatch = async () => {
+    const list = Array.from(selected);
+    if (list.length === 0) return;
+    if (!window.confirm(`ရွေးချယ်ထားသော recording ဖိုင် (${list.length}) ခုကို ဖျက်ရန် သေချာပါသလား?`)) return;
+
+    setDeleting(true);
+    try {
+      const base = getServerUrl();
+      const res = await fetch(`${base}/api/vps/recordings/delete-batch?key=${encodeURIComponent(accessCode)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filenames: list }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; deleted?: number; error?: { message?: string } };
+      if (data.ok) {
+        toast(`ဖိုင် (${data.deleted ?? list.length}) ခုကို အောင်မြင်စွာ ဖျက်ပြီးပါပြီ`, 'success');
+        setRecordings((prev) => prev.filter((r) => !selected.has(r.filename)));
+        setSelected(new Set());
+        setIsSelecting(false);
+      } else {
+        toast(data.error?.message || 'Batch delete failed', 'error');
+      }
+    } catch {
+      toast('Failed to delete recordings', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <Layout
       title="🎥 Recordings"
       headerRight={
         isUnlocked ? (
-          <div style={{ display: 'flex', gap: 6 }}>
-            <Button size="sm" variant="gray" loading={syncing} onClick={onSync}>
-              <Icon name="refresh" size={14} /> Sync
-            </Button>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {recordings.length > 0 && (
+              <Button
+                size="sm"
+                variant={isSelecting ? 'tinted' : 'gray'}
+                onClick={() => {
+                  setIsSelecting((v) => !v);
+                  if (isSelecting) setSelected(new Set());
+                }}
+              >
+                {isSelecting ? 'Done' : 'Select'}
+              </Button>
+            )}
+            {!isSelecting && (
+              <Button size="sm" variant="gray" loading={syncing} onClick={onSync}>
+                <Icon name="refresh" size={14} /> Sync
+              </Button>
+            )}
             <IconButton
               icon="x"
               label="Close"
@@ -174,6 +266,44 @@ export function RecordingsPage() {
           </Group>
         ) : (
           <>
+            {isSelecting && recordings.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 12,
+                  padding: '8px 12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: 10,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={selectAll}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--blue, #3b82f6)',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    fontSize: 14,
+                  }}
+                >
+                  {selected.size === recordings.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  disabled={selected.size === 0 || deleting}
+                  loading={deleting}
+                  onClick={deleteBatch}
+                >
+                  <Icon name="trash" size={14} /> Delete Selected ({selected.size})
+                </Button>
+              </div>
+            )}
+
             <Group
               title={`Saved Meetings (${recordings.length})`}
               footer={
@@ -190,37 +320,83 @@ export function RecordingsPage() {
                   const streamUrl = `${base}/api/vps/recordings/${encodeURIComponent(r.filename)}?key=${encodeURIComponent(accessCode)}`;
                   const downloadUrl = `${base}/api/vps/recordings/${encodeURIComponent(r.filename)}?key=${encodeURIComponent(accessCode)}&download=1`;
                   const title = r.meetingId !== 'unknown' ? `Meeting: ${r.meetingId.slice(0, 8)}...` : r.filename;
+                  const isChecked = selected.has(r.filename);
 
                   return (
                     <Row
                       key={r.filename}
-                      icon="video"
-                      iconTone="indigo"
+                      icon={isSelecting ? (isChecked ? 'circle-check' : 'circle-x') : 'video'}
+                      iconTone={isSelecting ? (isChecked ? 'blue' : 'gray') : 'indigo'}
                       label={title}
                       detail={`${formatDate(r.createdAt)} · ${formatBytes(r.sizeBytes)}`}
-                      onClick={() => setActiveVideo({ url: streamUrl, title })}
+                      onClick={() => {
+                        if (isSelecting) {
+                          toggleSelect(r.filename);
+                        } else {
+                          setActiveVideo({ url: streamUrl, title });
+                        }
+                      }}
                     >
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        <a
-                          href={downloadUrl}
-                          download={r.filename}
+                      {!isSelecting ? (
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <a
+                            href={downloadUrl}
+                            download={r.filename}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '6px 10px',
+                              background: 'rgba(255,255,255,0.08)',
+                              borderRadius: 6,
+                              color: 'inherit',
+                              textDecoration: 'none',
+                              fontSize: 13,
+                            }}
+                            title="Download MP4"
+                          >
+                            <Icon name="download" size={14} />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void deleteSingle(r.filename);
+                            }}
+                            disabled={deleting}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '6px 10px',
+                              background: 'rgba(239,68,68,0.12)',
+                              color: '#ef4444',
+                              border: 'none',
+                              borderRadius: 6,
+                              cursor: 'pointer',
+                              fontSize: 13,
+                              transition: 'background 0.2s',
+                            }}
+                            title="Delete recording"
+                          >
+                            <Icon name="trash" size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleSelect(r.filename)}
                           onClick={(e) => e.stopPropagation()}
                           style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '6px 10px',
-                            background: 'rgba(255,255,255,0.08)',
-                            borderRadius: 6,
-                            color: 'inherit',
-                            textDecoration: 'none',
-                            fontSize: 13,
+                            width: 18,
+                            height: 18,
+                            cursor: 'pointer',
+                            accentColor: 'var(--blue, #3b82f6)',
                           }}
-                          title="Download MP4"
-                        >
-                          <Icon name="download" size={14} />
-                        </a>
-                      </div>
+                        />
+                      )}
                     </Row>
                   );
                 })

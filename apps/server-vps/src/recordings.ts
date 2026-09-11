@@ -77,6 +77,84 @@ export class RecordingManager {
     return null;
   }
 
+  private getDeletedIds(): Set<string> {
+    const tombstonePath = path.join(this.dir, '.deleted.json');
+    if (fs.existsSync(tombstonePath)) {
+      try {
+        const raw = JSON.parse(fs.readFileSync(tombstonePath, 'utf8'));
+        if (Array.isArray(raw)) return new Set(raw);
+      } catch {
+        /* ignore */
+      }
+    }
+    return new Set();
+  }
+
+  private addDeletedId(id: string): void {
+    if (!id) return;
+    const current = this.getDeletedIds();
+    current.add(id);
+    const tombstonePath = path.join(this.dir, '.deleted.json');
+    try {
+      fs.writeFileSync(tombstonePath, JSON.stringify(Array.from(current)), 'utf8');
+    } catch {
+      /* ignore */
+    }
+  }
+
+  deleteRecording(filename: string): boolean {
+    const safeName = path.basename(filename);
+    const filePath = path.join(this.dir, safeName);
+    const metaPath = path.join(this.dir, `${safeName.replace(/\.mp4$/, '')}.json`);
+
+    let recordingId = '';
+    if (fs.existsSync(metaPath)) {
+      try {
+        const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+        recordingId = meta?.id || '';
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!recordingId) {
+      const parts = safeName.replace(/\.mp4$/, '').split('_');
+      recordingId = parts[2] || parts[1] || '';
+    }
+
+    if (recordingId) {
+      this.addDeletedId(recordingId);
+    }
+
+    let deleted = false;
+    if (fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+        deleted = true;
+      } catch {
+        /* ignore */
+      }
+    }
+    if (fs.existsSync(metaPath)) {
+      try {
+        fs.unlinkSync(metaPath);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    return deleted;
+  }
+
+  deleteRecordings(filenames: string[]): { deleted: number; failed: number } {
+    let deleted = 0;
+    let failed = 0;
+    for (const name of filenames) {
+      if (this.deleteRecording(name)) deleted++;
+      else failed++;
+    }
+    return { deleted, failed };
+  }
+
   async syncFromCloudflare(): Promise<{ downloaded: number; skipped: number; errors: number }> {
     if (this.syncing) return { downloaded: 0, skipped: 0, errors: 0 };
     if (!RtkApi.isConfigured(this.env)) return { downloaded: 0, skipped: 0, errors: 0 };
@@ -87,10 +165,16 @@ export class RecordingManager {
     let errors = 0;
 
     try {
+      const deletedIds = this.getDeletedIds();
       const rtk = new RtkApi(this.env);
       const items = await rtk.listRecordings();
 
       for (const item of items) {
+        if (deletedIds.has(item.id)) {
+          skipped++;
+          continue;
+        }
+
         const downloadUrl = item.download_url;
         if (!downloadUrl) continue;
         if (item.status === 'INVOKED' || item.status === 'STARTING' || item.status === 'RECORDING' || item.status === 'FAILED') {
