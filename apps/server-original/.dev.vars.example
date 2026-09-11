@@ -2,4 +2,3 @@ CF_ACCOUNT_ID=your_cloudflare_account_id
 RTK_APP_ID=your_rtk_app_id
 CF_API_TOKEN=your_cloudflare_api_token
 HOST_KEY_SECRET=cfmeeting_host_secret_key_2026_zin
-CREATE_ACCESS_CODE=Zinmeet456
