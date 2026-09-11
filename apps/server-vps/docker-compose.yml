@@ -5,7 +5,7 @@ services:
       dockerfile: apps/server-vps/Dockerfile
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${HOST_PORT:-3030}:3000"
     env_file:
       - .env
     environment:
