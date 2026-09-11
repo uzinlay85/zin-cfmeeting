@@ -59,41 +59,14 @@ export function SetupScreen({ meetingInfo, isHost, onBack, autoStart }: { meetin
         const cur = meeting.self.getCurrentDevices();
         const saved = getSavedUserDevices();
 
-        // 1. Audio / Mic
-        let activeAudioId = cur.audio?.deviceId;
         const matchedAudio = findMatchingDevice(saved.audioId, saved.audioLabel, audio);
-        if (matchedAudio) {
-          if (matchedAudio.deviceId !== activeAudioId) {
-            await meeting.self.setDevice(matchedAudio).catch(() => {});
-          }
-          activeAudioId = matchedAudio.deviceId;
-        } else if (!activeAudioId && audio.length > 0) {
-          activeAudioId = audio[0].deviceId;
-        }
+        const activeAudioId = cur.audio?.deviceId || matchedAudio?.deviceId || audio[0]?.deviceId;
 
-        // 2. Video / Camera
-        let activeVideoId = cur.video?.deviceId;
         const matchedVideo = findMatchingDevice(saved.videoId, saved.videoLabel, video);
-        if (matchedVideo) {
-          if (matchedVideo.deviceId !== activeVideoId) {
-            await meeting.self.setDevice(matchedVideo).catch(() => {});
-          }
-          activeVideoId = matchedVideo.deviceId;
-        } else if (!activeVideoId && video.length > 0) {
-          activeVideoId = video[0].deviceId;
-        }
+        const activeVideoId = cur.video?.deviceId || matchedVideo?.deviceId || video[0]?.deviceId;
 
-        // 3. Speaker
-        let activeSpeakerId = cur.speaker?.deviceId;
         const matchedSpeaker = findMatchingDevice(saved.speakerId, saved.speakerLabel, speaker);
-        if (matchedSpeaker) {
-          if (matchedSpeaker.deviceId !== activeSpeakerId) {
-            await meeting.self.setDevice(matchedSpeaker).catch(() => {});
-          }
-          activeSpeakerId = matchedSpeaker.deviceId;
-        } else if (!activeSpeakerId && speaker.length > 0) {
-          activeSpeakerId = speaker[0].deviceId;
-        }
+        const activeSpeakerId = cur.speaker?.deviceId || matchedSpeaker?.deviceId || speaker[0]?.deviceId;
 
         setCurrent({
           audio: activeAudioId,
