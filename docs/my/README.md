@@ -64,4 +64,12 @@
 
 ---
 
+### ၇။ [🎥 MiroTalk WebRTC - VPS တပ်ဆင်အသုံးပြုနည်း အပြည့်အစုံ လမ်းညွှန် (MIROTALK_SETUP_GUIDE.md)](MIROTALK_SETUP_GUIDE.md)
+* MiroTalk မိတ်ဆက်နှင့် မြန်မာပြည်အတွက် အားသာချက်များ (VPN မလိုဘဲ တိုက်ရိုက် သုံးနိုင်ခြင်း)
+* `https://miro.truehand.top` လက်တွေ့ တပ်ဆင်ခဲ့သော Docker Compose, Nginx Reverse Proxy, SSL Config များ
+* Fresh VPS တွင် A to Z Setup ပြုလုပ်နည်း အဆင့်ဆင့်
+* ပါဝင်သော Features များနှင့် နေ့စဉ် အသုံးဝင်သော Maintenance Command များ
+
+---
+
 [⬅️ မူရင်းပင်မ စာမျက်နှာ (Main README) သို့ ပြန်သွားရန်](../../README.md)
