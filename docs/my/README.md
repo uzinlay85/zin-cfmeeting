@@ -55,4 +55,13 @@
 
 ---
 
+### ၆။ [🛠️ VPS လက်တွေ့တပ်ဆင်မှု မှတ်တမ်းနှင့် အခက်အခဲများ ဖြေရှင်းနည်း (VPS_REAL_CASE_SETUP_TROUBLESHOOTING.md)](VPS_REAL_CASE_SETUP_TROUBLESHOOTING.md)
+* `https://zinmeet-rn.truehand.top` လက်တွေ့ တပ်ဆင်ခဲ့သော Server အချက်အလက်များ
+* ကြုံတွေ့ခဲ့ရသော အခက်အခဲ (၅) မျိုး (Port Collisions, Nginx Reverse Proxy, `.env` Setup, In-meeting Recording Controls, `/recordings` SPA Routing, Single/Batch Delete & Tombstone Auto-Sync Protection) နှင့် ဖြေရှင်းခဲ့သည့် နည်းလမ်းများ
+* Fresh VPS အသစ်တွင် A to Z Setup ပြုလုပ်နည်း အဆင့်ဆင့်
+* နေ့စဉ် အသုံးဝင်သော VPS Command များနှင့် စစ်ဆေးနည်းများ
+* အနာဂတ်တွင် Code Update ပြုလုပ်နည်း One-liner Command
+
+---
+
 [⬅️ မူရင်းပင်မ စာမျက်နှာ (Main README) သို့ ပြန်သွားရန်](../../README.md)
