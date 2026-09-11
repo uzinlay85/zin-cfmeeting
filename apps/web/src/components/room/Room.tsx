@@ -26,14 +26,19 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
   const title = useRealtimeKitSelector((m) => m.meta.meetingTitle) || meetingInfo.title;
   const viewType = useRealtimeKitSelector((m) => m.meta.viewType);
   const stageStatus = useRealtimeKitSelector((m) => m.stage.status);
+  const rtkRecordingState = useRealtimeKitSelector((m) => m.recording?.recordingState);
   const chatCount = useRealtimeKitSelector((m) => m.chat.messages.length);
   const canAudio = useRealtimeKitSelector((m) => m.self.permissions.canProduceAudio) === 'ALLOWED';
   const canVideo = useRealtimeKitSelector((m) => m.self.permissions.canProduceVideo) === 'ALLOWED';
   const canShare = useRealtimeKitSelector((m) => m.self.permissions.canProduceScreenshare) === 'ALLOWED' && supportsScreenShare;
-  const perms = meeting.self.permissions as unknown as Record<string, unknown>;
+  const perms = (meeting.self.permissions || {}) as unknown as Record<string, unknown>;
   const canMuteAll = perms.canDisableParticipantAudio === true;
+  const canRecord = perms.canRecord === true || perms.canRecord === 'ALLOWED' || Boolean(perms.canRecord) || canMuteAll;
   const canBreakout = Boolean((perms.connectedMeetings as { canAlterConnectedMeetings?: boolean } | undefined)?.canAlterConnectedMeetings);
   const isWebinarViewer = viewType === 'WEBINAR' && stageStatus !== 'ON_STAGE';
+
+  const [manualRecording, setManualRecording] = useState(false);
+  const isRecording = rtkRecordingState === 'RECORDING' || rtkRecordingState === 'STARTING' || manualRecording;
 
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
@@ -69,6 +74,30 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
   const toggleFullscreen = () => {
     if (document.fullscreenElement) void document.exitFullscreen();
     else void document.documentElement.requestFullscreen().catch(fail);
+  };
+  const toggleRecording = async () => {
+    const next = !isRecording;
+    const action = next ? 'start' : 'stop';
+    try {
+      setManualRecording(next);
+      if (next) {
+        meeting.recording?.start?.().catch(() => {});
+      } else {
+        meeting.recording?.stop?.().catch(() => {});
+      }
+      const res = await fetch(`/api/meetings/${encodeURIComponent(meetingInfo.ref)}/recording/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+      if (!res.ok && res.status !== 404) {
+        setManualRecording(!next);
+        throw new Error(data?.error?.message || `Failed to ${action} recording`);
+      }
+      toast(next ? 'Recording started' : 'Recording stopped', 'info');
+    } catch (err) {
+      fail(err);
+    }
   };
   const stageAction = () => {
     const p =
@@ -110,6 +139,11 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
         <span className="chip">
           <Icon name="users" size={14} /> {t('room.people').replace('{n}', String(joinedCount + 1))}
         </span>
+        {isRecording ? (
+          <span className="chip chip-rec">
+            <span className="rec-dot" /> {t('room.recording')}
+          </span>
+        ) : null}
         <span className="room-spacer" />
         <button type="button" className="chip chip-btn" onClick={onInvite}>
           <Icon name="user-plus" size={15} /> {!isMobile ? t('ctrl.invite') : null}
@@ -159,7 +193,7 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
                 <Icon name={fullscreen ? 'minimize' : 'maximize'} size={18} /> {fullscreen ? t('ctrl.exitFullscreen') : t('ctrl.fullscreen')}
               </button>
             ) : null}
-            {canMuteAll || canBreakout ? <div className="more-sep" /> : null}
+            {canMuteAll || canBreakout || canRecord ? <div className="more-sep" /> : null}
             {canMuteAll ? (
               <button type="button" className="more-item" onClick={() => { setMore(false); emit({ activeMuteAllConfirmation: true }); }}>
                 <Icon name="mic-off" size={18} /> {t('ctrl.muteAll')}
@@ -168,6 +202,11 @@ export function Room({ states, meetingInfo, onInvite }: { states: States; meetin
             {canBreakout ? (
               <button type="button" className="more-item" onClick={() => { setMore(false); emit({ activeBreakoutRoomsManager: { active: true, mode: 'create' } }); }}>
                 <Icon name="layers" size={18} /> {t('ctrl.breakout')}
+              </button>
+            ) : null}
+            {canRecord ? (
+              <button type="button" className={`more-item ${isRecording ? 'danger' : ''}`} onClick={() => { setMore(false); void toggleRecording(); }}>
+                <Icon name="record" size={18} /> {isRecording ? t('ctrl.stopRecord') : t('ctrl.record')}
               </button>
             ) : null}
           </div>
