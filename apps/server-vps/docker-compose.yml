@@ -4,6 +4,8 @@ services:
       context: ../..
       dockerfile: apps/server-vps/Dockerfile
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
     env_file:
       - .env
     environment:
@@ -20,6 +22,8 @@ services:
       retries: 3
       start_period: 5s
 
+  # Optional Caddy container (only for standalone VPS where port 80/443 is free)
+  # If host already runs Nginx/Apache on port 80, use Nginx reverse proxy instead.
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
