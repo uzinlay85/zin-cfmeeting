@@ -8,6 +8,7 @@ import { ToastProvider } from './components/ui';
 import { Home } from './pages/Home';
 import { MeetingPage } from './pages/MeetingPage';
 import { Preview } from './pages/Preview';
+import { RecordingsPage } from './pages/RecordingsPage';
 
 /** Deep links (desktop / Android) and the Android back button need the router. */
 function NativeBridge() {
@@ -35,6 +36,7 @@ export default function App() {
           <NativeBridge />
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/recordings" element={<RecordingsPage />} />
             <Route path="/m/:ref" element={<MeetingPage />} />
             {import.meta.env.DEV ? <Route path="/preview" element={<Preview />} /> : null}
             <Route path="*" element={<Navigate to="/" replace />} />

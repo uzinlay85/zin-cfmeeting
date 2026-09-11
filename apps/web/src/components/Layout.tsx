@@ -18,7 +18,7 @@ export function Ambient() {
   );
 }
 
-export function Layout({ children }: { children: ReactNode }) {
+export function Layout({ children, title, headerRight }: { children: ReactNode; title?: ReactNode; headerRight?: ReactNode }) {
   const { t, lang, setLang } = useI18n();
   const [search] = useSearchParams();
   const [about, setAbout] = useState(() => search.get('open') === 'about');
@@ -40,18 +40,34 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className={`app ${isMac ? 'app-mac' : ''}`}>
       <Ambient />
       <header className="topbar">
-        <Link to="/" className="brand">
-          <Logo size={28} />
-          <span className="brand-name">{t('app.name')}</span>
-          <span className="brand-pill">{t('home.edition')}</span>
-        </Link>
+        {title ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Link to="/" className="brand">
+              <Logo size={28} />
+            </Link>
+            <span style={{ fontWeight: 600, fontSize: 16 }}>{title}</span>
+          </div>
+        ) : (
+          <Link to="/" className="brand">
+            <Logo size={28} />
+            <span className="brand-name">{t('app.name')}</span>
+            <span className="brand-pill">{t('home.edition')}</span>
+          </Link>
+        )}
         <nav className="topbar-actions">
-          <button className="lang-btn" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} title={t('settings.language')}>
-            {lang === 'zh' ? 'EN' : '中文'}
-          </button>
-          <IconButton className="theme-btn" icon={theme === 'dark' ? 'sun' : 'moon'} label={t('settings.theme')} onClick={toggleTheme} size={32} />
-          <IconButton icon="settings" label={t('nav.settings')} onClick={() => setSettings(true)} size={32} />
-          <IconButton icon="info" label={t('nav.about')} onClick={() => setAbout(true)} size={32} />
+          {headerRight || (
+            <>
+              <Link to="/recordings" title="Recordings" style={{ textDecoration: 'none' }}>
+                <IconButton icon="video" label="Recordings" size={32} />
+              </Link>
+              <button className="lang-btn" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} title={t('settings.language')}>
+                {lang === 'zh' ? 'EN' : '中文'}
+              </button>
+              <IconButton className="theme-btn" icon={theme === 'dark' ? 'sun' : 'moon'} label={t('settings.theme')} onClick={toggleTheme} size={32} />
+              <IconButton icon="settings" label={t('nav.settings')} onClick={() => setSettings(true)} size={32} />
+              <IconButton icon="info" label={t('nav.about')} onClick={() => setAbout(true)} size={32} />
+            </>
+          )}
         </nav>
       </header>
       <main className="main">{children}</main>
