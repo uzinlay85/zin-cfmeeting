@@ -346,17 +346,16 @@ sudo bash ~/vps-stack/scripts/git-backup-push.sh
 > (sudo crontab -l 2>/dev/null; echo "0 1 * * * bash /home/zinko/vps-stack/scripts/git-backup-push.sh > /dev/null 2>&1") | sudo crontab -
 > ```
 
-### (ခ) Server အသစ်တွင် GitHub မှတဆင့် ပြန်လည် Restore ပြုလုပ်ခြင်း
-Server အသစ်တွင် Repo ကို Clone ဆွဲပြီး အောက်ပါ command တစ်ခုတည်းဖြင့် Restore လုပ်နိုင်ပါသည်:
-```bash
-# 1. Repo Clone ဆွဲပြီး ဝင်ပါ
-git clone https://github.com/uzinlay85/zin-meet-all-backup-restore.git ~/vps-stack
-cd ~/vps-stack
+### ♻️ (ခ) နောင်တစ်ချိန် Server အသစ်တွင် အသုံးပြုပုံ (၅ မိနစ်အတွင်း အပြည့်အစုံ Restore)
 
-# 2. Git Backup မှတဆင့် Restore လုပ်ပါ
-sudo bash scripts/git-restore.sh
+နောင်တစ်ချိန်တွင် VPS အသစ်တစ်လုံး ရရှိပါက အောက်ပါ command (၂) ကြောင်းတည်း ရိုက်လိုက်ရုံဖြင့် အားလုံး မူလအတိုင်း အဆင်သင့် ပြန်လည် အလုပ်လုပ်ပါမည်ခင်ဗျာ:
+
+```bash
+git clone https://github.com/uzinlay85/zin-meet-all-backup-restore.git ~/vps-stack
+cd ~/vps-stack && sudo bash scripts/git-restore.sh
 ```
-အထက်ပါအတိုင်း ပြုလုပ်လိုက်သည်နှင့် SSL, Configs, Snikket စကားပြောစာရင်းများနှင့် Services (၃) ခုလုံး စက္ကန့် ၃၀ အတွင်း အပြည့်အဝ ပြန်လည် အသက်ဝင်လာပါမည်။
+
+အားလုံး စနစ်တကျနှင့် ခေတ်မီသော GitOps Backup & Restore စနစ်တစ်ခုအဖြစ် အပြည့်အဝ တည်ဆောက် ပြီးစီးသွားပါပြီခင်ဗျာ! 🚀
 
 ---
 
