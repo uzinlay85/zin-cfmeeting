@@ -281,7 +281,55 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ---
 
-## 💾 ၆။ စနစ် (၃) ခုလုံးကို Backup ပြုလုပ်နည်း (Complete Backup Strategy)
+## 🚀 ၆။ Git Repository မှတဆင့် One-Command Deploy လုပ်နည်း (GitOps)
+
+အထက်ပါ အဆင့်များကို တစ်ခုချင်းစီ လက်ဖြင့် မရိုက်လိုပါက စနစ်တကျ ပြုစုထားသော [zin-meet-all-backup-restore](https://github.com/uzinlay85/zin-meet-all-backup-restore.git) Repository ကို အသုံးပြုပြီး Script တစ်ကြောင်းတည်းဖြင့် အကုန် Auto Deploy လုပ်နိုင်ပါသည်:
+
+```bash
+git clone https://github.com/uzinlay85/zin-meet-all-backup-restore.git ~/vps-stack
+cd ~/vps-stack && sudo bash deploy-all.sh
+```
+
+### 🔑 Private Repo ဖြစ်နေပါက VPS တွင် Git Clone အလွယ်တကူ ပြုလုပ်နည်း (၃) မျိုး
+
+Repository ကို Private အဖြစ် ထားရှိထားပါက VPS မှ `git clone` ပြုလုပ်ချိန်တွင် GitHub က `Username` နှင့် `Password` တောင်းဆိုပါလိမ့်မည်။ ထိုအခါ အောက်ပါ နည်းလမ်း (၃) မျိုးထဲမှ မိမိ အဆင်ပြေရာကို အသုံးပြုနိုင်ပါသည်:
+
+#### နည်းလမ်း (၁) - GitHub Personal Access Token (PAT) ဖြင့် Clone ခြင်း (အကြံပြု ⭐)
+GitHub သည် လုံခြုံရေးအရ စကားဝှက်အစစ်ကို လက်မခံဘဲ Token ကိုသာ လက်ခံပါသည်:
+1. **GitHub သို့ သွားပါ:** `Settings` -> အောက်ဆုံးရှိ `Developer settings` -> `Personal access tokens` -> `Tokens (classic)` သို့ သွားပါ။
+2. **Token အသစ် ထုတ်ပါ:** `Generate new token (classic)` ကို နှိပ်ပြီး Note တွင် `vps-token` ဟု ပေးကာ **`repo`** checkbox ကို အမှန်ခြစ်၍ Generate နှိပ်ပါ။
+3. ထွက်လာသော Token (ဥပမာ `ghp_xxxxxxxxxxxxxxxxxxxx`) ကို ကူးယူထားပါ။
+4. **VPS တွင် Run ပါ:**
+   ```bash
+   git clone https://github.com/uzinlay85/zin-meet-all-backup-restore.git ~/vps-stack
+   ```
+   - **Username:** `uzinlay85`
+   - **Password:** `[ထုတ်ယူထားသော Token ကို Paste ချပါ]`
+   *(သို့မဟုတ် Token ပါ တခါတည်း ထည့်သွင်းထားသော One-liner URL ဖြင့် `git clone https://<YOUR_TOKEN>@github.com/uzinlay85/zin-meet-all-backup-restore.git ~/vps-stack` ဟု တန်းရိုက်နိုင်ပါသည်)*
+
+#### နည်းလမ်း (၂) - Repository ကို Public ပြောင်းလဲခြင်း (အလွယ်ဆုံး)
+မည်သည့် Token မှ ရိုက်မနေချင်ဘဲ ချက်ချင်း Clone ရယူလိုပါက:
+1. GitHub ရှိ မိမိ၏ **zin-meet-all-backup-restore** Repository ထဲသို့ ဝင်ပါ။
+2. `Settings` Tab -> အောက်ဆုံးရှိ `Danger Zone` -> `Change repository visibility` ကို နှိပ်ပါ။
+3. **`Change to public`** ကို ရွေးချယ်ပြီး အတည်ပြုပေးလိုက်ပါ။
+4. ယခုအခါ မည်သည့် Password/Token မျှ မလိုဘဲ `git clone https://github.com/uzinlay85/zin-meet-all-backup-restore.git ~/vps-stack` ချက်ချင်း ရယူနိုင်ပါပြီ။
+
+#### နည်းလမ်း (၃) - VPS SSH Key ဖြင့် ချိတ်ဆက်ခြင်း (အမြဲတမ်း Password မလိုသည့် နည်းလမ်း)
+1. VPS Terminal တွင် SSH Key ဆောက်ပါ:
+   ```bash
+   ssh-keygen -t ed25519 -C "uzinlay@gmail.com" -f ~/.ssh/id_ed25519 -N ""
+   cat ~/.ssh/id_ed25519.pub
+   ```
+2. ပေါ်လာသော Public Key စာကြောင်းကို Copy ယူပါ။
+3. GitHub -> `Settings` -> `SSH and GPG keys` -> `New SSH key` တွင် Paste ထည့်ပါ။
+4. VPS တွင် အောက်ပါ command ဖြင့် စကားဝှက် လုံးဝ မလိုဘဲ Clone ရပါမည်:
+   ```bash
+   git clone git@github.com:uzinlay85/zin-meet-all-backup-restore.git ~/vps-stack
+   ```
+
+---
+
+## 💾 ၇။ စနစ် (၃) ခုလုံးကို Backup ပြုလုပ်နည်း (Complete Backup Strategy)
 
 Server တစ်ခုလုံး ပျက်စီးသွားချိန် သို့မဟုတ် အသစ်ပြောင်းရွှေ့ချိန်တွင် စက္ကန့်ပိုင်းအတွင်း ပြန်ယူနိုင်ရန် အောက်ပါ Backup Script ကို ဖန်တီးထားပါသည်:
 
