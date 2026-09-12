@@ -64,11 +64,28 @@
 
 ---
 
-### ၇။ [🎥 MiroTalk WebRTC - VPS တပ်ဆင်အသုံးပြုနည်း အပြည့်အစုံ လမ်းညွှန် (MIROTALK_SETUP_GUIDE.md)](MIROTALK_SETUP_GUIDE.md)
-* MiroTalk မိတ်ဆက်နှင့် မြန်မာပြည်အတွက် အားသာချက်များ (VPN မလိုဘဲ တိုက်ရိုက် သုံးနိုင်ခြင်း)
-* `https://miro.truehand.top` လက်တွေ့ တပ်ဆင်ခဲ့သော Docker Compose, Nginx Reverse Proxy, SSL Config များ
+### ၇။ [🎥 MiroTalk SFU (Mediasoup) - VPS တပ်ဆင်အသုံးပြုနည်း အပြည့်အစုံ လမ်းညွှန် (MIROTALK_SETUP_GUIDE.md)](MIROTALK_SETUP_GUIDE.md)
+* MiroTalk SFU မိတ်ဆက်နှင့် P2P vs SFU နှိုင်းယှဉ်ချက် (Multi-party Grid View၊ Client Upload သက်သာမှု)
+* `https://miro.truehand.top` လက်တွေ့ တပ်ဆင်ခဲ့သော Docker Compose, Mediasoup UDP Ports, Nginx HTTPS Proxy Config များ
 * Fresh VPS တွင် A to Z Setup ပြုလုပ်နည်း အဆင့်ဆင့်
-* ပါဝင်သော Features များနှင့် နေ့စဉ် အသုံးဝင်သော Maintenance Command များ
+* လက်တွေ့ကြုံတွေ့ခဲ့ရသော Gotchas (Port 3010, internal SSL, container conflict) နှင့် Maintenance Commands များ
+
+---
+
+### ၈။ [💬 Snikket - Private Messaging & Voice/Video Call - VPS တပ်ဆင်အသုံးပြုနည်း အပြည့်အစုံ လမ်းညွှန် (SNIKKET_SETUP_GUIDE.md)](SNIKKET_SETUP_GUIDE.md)
+* Snikket မိတ်ဆက်နှင့် မြန်မာပြည်အတွက် အားသာချက်များ (VPN မလို၊ E2EE Encryption၊ Voice & Video Call အပြည့်အစုံ)
+* `https://chat.truehand.top` လက်တွေ့ တပ်ဆင်ခဲ့သော DNS Subdomains (၃) ခုနှင့် Nginx Reverse Proxy Config
+* Port 80/443 Conflict မဖြစ်စေရန် Port 5080/5443 Tweaks နှင့် Docker Compose Setup
+* Admin / User Invite Links ထုတ်ယူပုံနှင့် Mobile App ချိတ်ဆက် အသုံးပြုပုံ လမ်းညွှန်
+
+---
+
+### ၉။ [🌐 VPS All-in-One Multi-Service Setup, Backup & Restore Guide (VPS_ALL_IN_ONE_SETUP_BACKUP_RESTORE.md)](VPS_ALL_IN_ONE_SETUP_BACKUP_RESTORE.md)
+* စနစ် (၃) ခုစလုံး (**ZIN-CFMeeting + MiroTalk SFU + Snikket Chat**) ကို Linux VPS တစ်ခုတည်းပေါ်တွင် Port Conflict လုံးဝ မဖြစ်စေဘဲ ငြိမ်သက်စွာ ပူးတွဲ Run ထားသည့် Master Architecture နှင့် Port Mapping Matrix
+* Cloudflare DNS Records (၅) ခုနှင့် Unified UFW Firewall ပြင်ဆင်ပုံ
+* Fresh VPS အသစ်တွင် A to Z Setup လုပ်နည်း အဆင့်ဆင့်
+* **တစ်ချက်နှိပ်ရုံဖြင့် Services အားလုံး (Configs, SSL, Volumes, DB, Recordings) ကို အလိုအလျောက် Archive ပြုလုပ်ပေးမည့် `backup-all-services.sh` Script**
+* **Disaster Recovery:** Server အသစ်တွင် ၅ မိနစ်အတွင်း အပြည့်အစုံ ပြန်လည် အသက်သွင်းမည့် Restore လုပ်ငန်းစဉ် အပြည့်အစုံ
 
 ---
 
