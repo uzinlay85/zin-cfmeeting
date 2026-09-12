@@ -329,7 +329,38 @@ GitHub သည် လုံခြုံရေးအရ စကားဝှက်�
 
 ---
 
-## 💾 ၇။ စနစ် (၃) ခုလုံးကို Backup ပြုလုပ်နည်း (Complete Backup Strategy)
+## ☁️ ၇။ Git Push & Pull ဖြင့် Backup / Restore အလိုအလျောက် ပြုလုပ်နည်း (Git-Powered State Sync)
+
+Video Recording ဖိုင်ကြီးများကို ချန်လှပ်ပြီး **Nginx Configs, SSL Certificates, MiroTalk SFU, Snikket Chat Data (DB) နှင့် CFMeeting .env** သီးသန့်ကိုသာ Backup ဆွဲပါက ဖိုင်အရွယ်အစားသည် **5MB မှ 15MB ခန့်သာ** ရှိပါမည်။
+
+ထို့ကြောင့် GitHub ပေါ်သို့ `git push` တိုက်ရိုက် တင်ထားနိုင်ပြီး Server အသစ်တွင် `git pull` ဖြင့် ချက်ချင်း ပြန်လည် Restore လုပ်နိုင်ပါသည်:
+
+### (က) VPS ပေါ်မှ GitHub သို့ Backup တင်ခြင်း (One-command Git Backup & Push)
+```bash
+sudo bash ~/vps-stack/scripts/git-backup-push.sh
+```
+*(၎င်းသည် Backup ဖိုင်ကို ဆွဲယူပြီး GitHub Repo ၏ `backup-data/vps_state_backup.tar.gz` အဖြစ် အလိုအလျောက် Commit & Push တင်ပေးသွားပါမည်)*
+
+> **ညစဉ် GitHub သို့ Auto Push တင်စေရန် (Cron Job):**
+> ```bash
+> (sudo crontab -l 2>/dev/null; echo "0 1 * * * bash /home/zinko/vps-stack/scripts/git-backup-push.sh > /dev/null 2>&1") | sudo crontab -
+> ```
+
+### (ခ) Server အသစ်တွင် GitHub မှတဆင့် ပြန်လည် Restore ပြုလုပ်ခြင်း
+Server အသစ်တွင် Repo ကို Clone ဆွဲပြီး အောက်ပါ command တစ်ခုတည်းဖြင့် Restore လုပ်နိုင်ပါသည်:
+```bash
+# 1. Repo Clone ဆွဲပြီး ဝင်ပါ
+git clone https://github.com/uzinlay85/zin-meet-all-backup-restore.git ~/vps-stack
+cd ~/vps-stack
+
+# 2. Git Backup မှတဆင့် Restore လုပ်ပါ
+sudo bash scripts/git-restore.sh
+```
+အထက်ပါအတိုင်း ပြုလုပ်လိုက်သည်နှင့် SSL, Configs, Snikket စကားပြောစာရင်းများနှင့် Services (၃) ခုလုံး စက္ကန့် ၃၀ အတွင်း အပြည့်အဝ ပြန်လည် အသက်ဝင်လာပါမည်။
+
+---
+
+## 💾 ၈။ စနစ် (၃) ခုလုံးကို Local VPS Backup ပြုလုပ်နည်း (Full Backup with Video Recordings)
 
 Server တစ်ခုလုံး ပျက်စီးသွားချိန် သို့မဟုတ် အသစ်ပြောင်းရွှေ့ချိန်တွင် စက္ကန့်ပိုင်းအတွင်း ပြန်ယူနိုင်ရန် အောက်ပါ Backup Script ကို ဖန်တီးထားပါသည်:
 
