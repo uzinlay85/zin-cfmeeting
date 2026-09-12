@@ -77,6 +77,7 @@
 * `https://chat.truehand.top` လက်တွေ့ တပ်ဆင်ခဲ့သော DNS Subdomains (၃) ခုနှင့် Nginx Reverse Proxy Config
 * Port 80/443 Conflict မဖြစ်စေရန် Port 5080/5443 Tweaks နှင့် Docker Compose Setup
 * Admin / User Invite Links ထုတ်ယူပုံနှင့် Mobile App ချိတ်ဆက် အသုံးပြုပုံ လမ်းညွှန်
+* **Circles, Groups နှင့် User Access Management (မိသားစုနှင့် မိတ်ဆွေ အချင်းချင်း လုံးဝ မချိတ်မိအောင် Limited Access ဖြင့် သီးခြားစီ ခွဲခြားနည်း လမ်းညွှန်)**
 
 ---
 
